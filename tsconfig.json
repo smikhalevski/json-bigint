@@ -1,22 +1,14 @@
 {
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
     "declaration": true,
-    "downlevelIteration": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "lib": [
-      "dom",
-      "esnext"
-    ],
-    "moduleResolution": "node",
-    "noUnusedLocals": false,
-    "preserveSymlinks": true,
-    "removeComments": false,
-    "skipLibCheck": true,
+    "moduleResolution": "Node",
     "strict": true,
-    "target": "es3",
-    "module": "esnext",
+    "lib": [
+      "ES2020.BigInt"
+    ],
+    "target": "ES5",
+    "module": "ES6",
     "rootDir": "./src/main",
     "outDir": "./lib"
   },

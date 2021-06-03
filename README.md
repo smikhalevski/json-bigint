@@ -1,3 +1,3 @@
-json-bigint
+# json-bigint
 
-The lib for symmetrical serialization/parsing of bigint values as JSON strings.
+The symmetrical and backwards compatible JSON serializer/parser with bigint support.
