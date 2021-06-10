@@ -1,7 +1,10 @@
 import {IJsonTokenizerOptions, tokenizeJson} from './tokenizeJson';
-import {ResultCode} from '../../../tokenizer-dsl';
+import {ResultCode} from 'tokenizer-dsl';
+import {revive} from './revive';
 
 const enum Mode {
+  STREAM_START,
+  STREAM_END,
   OBJECT_START,
   OBJECT_PAIR,
   OBJECT_KEY,
@@ -10,91 +13,99 @@ const enum Mode {
   ARRAY_START,
   ARRAY_ITEM,
   ARRAY_COMMA,
-  LITERAL,
 }
-
-type Reviver = (this: any, key: string, value: any) => any;
 
 interface IJsonParserOptions {
-  bigintParser?: (str: string) => any;
+
+  /**
+   * Converts integer string to a bigint instance.
+   *
+   * @default BigInt
+   */
+  bigIntParser?: (str: string) => any;
 }
+
+export type Reviver = (this: any, key: string, value: any) => any;
 
 export function createJsonParser(options: IJsonParserOptions = {}): (str: string, reviver?: Reviver) => any {
   const {
-    bigintParser = BigInt,
+    bigIntParser = BigInt,
   } = options;
 
-  const queue = new Array(50);
-  const modes = new Array<Mode>(50);
+  const queue = new Array(100);
+  const modes = new Array<Mode>(100).fill(-1);
 
   let key: string;
-  let depth = -1;
+  let index: number;
+  let mode: Mode;
 
-  const insertValue = (value: unknown, start: number): void => {
-    if (modes[depth] === Mode.OBJECT_COLON) {
-      queue[depth][key] = value;
-      modes[depth] = Mode.OBJECT_PAIR;
+  const insertChild = (value: unknown, start: number): void => {
+    if (mode === Mode.OBJECT_COLON) {
+      queue[index][key] = value;
+      modes[index] = mode = Mode.OBJECT_PAIR;
       return;
     }
-    if (modes[depth] === Mode.ARRAY_START || modes[depth] === Mode.ARRAY_COMMA) {
-      queue[depth].push(value);
-      modes[depth] = Mode.ARRAY_ITEM;
+    if (mode === Mode.ARRAY_START || mode === Mode.ARRAY_COMMA) {
+      queue[index].push(value);
+      modes[index] = mode = Mode.ARRAY_ITEM;
       return;
     }
     throw new SyntaxError(`Unexpected token at ${start}`);
   };
 
   const insertLiteral = (value: unknown, start: number): void => {
-    if (depth === -1) {
+    if (mode === Mode.STREAM_START) {
       queue[0] = value;
-      modes[0] = Mode.LITERAL;
+      modes[0] = mode = Mode.STREAM_END;
       return;
     }
-    insertValue(value, start);
+    insertChild(value, start);
   };
 
   const tokenizerOptions: IJsonTokenizerOptions = {
 
     onObjectStart(start) {
-      const value = queue[depth + 1] = {};
-      modes[depth + 1] = Mode.OBJECT_START;
+      const value = {};
 
-      if (depth !== -1) {
-        insertValue(value, start);
+      if (mode !== Mode.STREAM_START) {
+        insertChild(value, start);
       }
-      depth++;
+      index++;
+      queue[index] = value;
+      modes[index] = mode = Mode.OBJECT_START;
     },
 
     onObjectEnd(start) {
-      if (modes[depth] === Mode.OBJECT_PAIR || modes[depth] === Mode.OBJECT_START) {
-        depth--;
+      if (mode === Mode.OBJECT_PAIR || mode === Mode.OBJECT_START) {
+        mode = index-- === 0 ? Mode.STREAM_END : modes[index];
         return;
       }
       throw new SyntaxError(`Unexpected token at ${start}`);
     },
 
     onArrayStart(start) {
-      const value = queue[depth + 1] = [];
-      modes[depth + 1] = Mode.ARRAY_START;
+      const value: Array<any> = [];
 
-      if (depth !== -1) {
-        insertValue(value, start);
+      if (mode !== Mode.STREAM_START) {
+        insertChild(value, start);
       }
-      depth++;
+      index++;
+      queue[index] = value;
+      modes[index] = mode = Mode.ARRAY_START;
     },
 
     onArrayEnd(start) {
-      if (modes[depth] === Mode.ARRAY_ITEM || modes[depth] === Mode.ARRAY_START) {
-        depth--;
+      if (mode === Mode.ARRAY_ITEM || mode === Mode.ARRAY_START) {
+        mode = index-- === 0 ? Mode.STREAM_END : modes[index];
         return;
       }
       throw new SyntaxError(`Unexpected token at ${start}`);
     },
 
     onString(data, start) {
-      if (modes[depth] === Mode.OBJECT_START || modes[depth] === Mode.OBJECT_COMMA) {
+      if (mode === Mode.OBJECT_START || mode === Mode.OBJECT_COMMA) {
         key = data;
-        modes[depth] = Mode.OBJECT_KEY;
+        modes[index] = mode = Mode.OBJECT_KEY;
         return;
       }
       insertLiteral(data, start);
@@ -105,7 +116,7 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
     },
 
     onBigInt(data, start) {
-      insertLiteral(bigintParser(data), start);
+      insertLiteral(bigIntParser(data), start);
     },
 
     onTrue(start) {
@@ -121,20 +132,20 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
     },
 
     onColon(start) {
-      if (modes[depth] === Mode.OBJECT_KEY) {
-        modes[depth] = Mode.OBJECT_COLON;
+      if (mode === Mode.OBJECT_KEY) {
+        modes[index] = mode = Mode.OBJECT_COLON;
         return;
       }
       throw new SyntaxError(`Unexpected token at ${start}`);
     },
 
     onComma(start) {
-      if (modes[depth] === Mode.OBJECT_PAIR) {
-        modes[depth] = Mode.OBJECT_COMMA;
+      if (mode === Mode.OBJECT_PAIR) {
+        modes[index] = mode = Mode.OBJECT_COMMA;
         return;
       }
-      if (modes[depth] === Mode.ARRAY_ITEM) {
-        modes[depth] = Mode.ARRAY_COMMA;
+      if (mode === Mode.ARRAY_ITEM) {
+        modes[index] = mode = Mode.ARRAY_COMMA;
         return;
       }
       throw new SyntaxError(`Unexpected token at ${start}`);
@@ -142,7 +153,8 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
   };
 
   return (str, reviver) => {
-    depth = -1;
+    index = -1;
+    mode = Mode.STREAM_START as Mode;
 
     const result = tokenizeJson(str, tokenizerOptions);
 
@@ -152,31 +164,10 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
     if (str.length !== result) {
       throw new SyntaxError(`Unexpected token at ${result}`);
     }
-    if (depth !== -1) {
+    if (mode !== Mode.STREAM_END) {
       throw new SyntaxError('Unexpected end');
     }
 
     return reviver ? revive({'': queue[0]}, '', reviver) : queue[0];
   };
-}
-
-export function revive(parent: any, key: string, reviver: Reviver): any {
-  const obj = parent[key];
-
-  if (obj !== null && typeof obj === 'object') {
-    const keys = Object.keys(obj);
-
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
-      const value = revive(obj, key, reviver);
-
-      if (value !== undefined) {
-        obj[key] = value;
-      } else {
-        delete obj[key];
-      }
-    }
-  }
-
-  return reviver.call(parent, key, obj);
 }

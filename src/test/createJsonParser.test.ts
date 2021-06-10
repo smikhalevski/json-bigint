@@ -58,15 +58,15 @@ describe('createJsonParser', () => {
     expect(parseJson('[{"foo":"abc"}]')).toEqual([{foo: 'abc'}]);
   });
 
-  test('parses complex input', () => {
-    expect(parseJson('{"foo":[null,"abc",true],"bar":123,"baz":123.0}')).toEqual({
-      foo: [null, 'abc', true],
-      bar: BigInt(123),
-      baz: 123,
-    });
-  });
-
   test('parses huge input', () => {
     parseJson(fs.readFileSync(path.join(__dirname, './test.json'), 'utf8'));
+  });
+
+  test('throws on object after string', () => {
+    expect(() => parseJson('"aaa"{}')).toThrow(new SyntaxError('Unexpected token at 5'))
+  });
+
+  test('throws on string after object', () => {
+    expect(() => parseJson('{}"aaa"')).toThrow(new SyntaxError('Unexpected token at 2'))
   });
 });

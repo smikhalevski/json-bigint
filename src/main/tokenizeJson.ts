@@ -55,27 +55,15 @@ const takeExponent = seq(
 
 const takeHexInteger = allCharBy(isHexDigitChar, 4, 4);
 
-const takeObjectStart = char(CharCode['{']);
-
-const takeObjectEnd = char(CharCode['}']);
-
-const takeArrayStart = char(CharCode['[']);
-
-const takeArrayEnd = char(CharCode[']']);
-
 const takeTrue = text('true');
 
 const takeFalse = text('false');
 
 const takeNull = text('null');
 
-const takeColon = char(CharCode[':']);
-
-const takeComma = char(CharCode[',']);
-
 let lastString = '';
 
-const takeString: Taker = (str, i) => {
+export const takeString: Taker = (str, i) => {
   if (str.charCodeAt(i) !== CharCode['"']) {
     return ResultCode.NO_MATCH;
   }
@@ -195,56 +183,46 @@ export function tokenizeJson(str: string, options: IJsonTokenizerOptions): numbe
 
     i = takeSpace(str, i);
 
-    // No more tokens available.
     if (i === charCount) {
       break;
     }
 
-    j = takeColon(str, i);
-    if (j >= 0) {
-      onColon?.(i, j);
-      i = j;
-      continue;
-    }
+    switch (str.charCodeAt(i)) {
 
-    j = takeComma(str, i);
-    if (j >= 0) {
-      onComma?.(i, j);
-      i = j;
-      continue;
+      case CharCode[':']:
+        onColon?.(i, i + 1);
+        i++;
+        continue;
+
+      case CharCode[',']:
+        onComma?.(i, i + 1);
+        i++;
+        continue;
+
+      case CharCode['{']:
+        onObjectStart?.(i, i + 1);
+        i++;
+        continue;
+
+      case CharCode['}']:
+        onObjectEnd?.(i, i + 1);
+        i++;
+        continue;
+
+      case CharCode['[']:
+        onArrayStart?.(i, i + 1);
+        i++;
+        continue;
+
+      case CharCode[']']:
+        onArrayEnd?.(i, i + 1);
+        i++;
+        continue;
     }
 
     j = takeString(str, i);
     if (j >= 0) {
       onString?.(lastString, i, j);
-      i = j;
-      continue;
-    }
-
-    j = takeObjectStart(str, i);
-    if (j >= 0) {
-      onObjectStart?.(i, j);
-      i = j;
-      continue;
-    }
-
-    j = takeObjectEnd(str, i);
-    if (j >= 0) {
-      onObjectEnd?.(i, j);
-      i = j;
-      continue;
-    }
-
-    j = takeArrayStart(str, i);
-    if (j >= 0) {
-      onArrayStart?.(i, j);
-      i = j;
-      continue;
-    }
-
-    j = takeArrayEnd(str, i);
-    if (j >= 0) {
-      onArrayEnd?.(i, j);
       i = j;
       continue;
     }

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const bench = require('nodemark');
-const {createJsonParser, tokenizeJson} = require('../../lib/index-cjs');
+const {createJsonParser} = require('../../lib/index-cjs');
 const JsonBigint = require('json-bigint');
 
 const benchDuration = 10000;
@@ -12,18 +12,18 @@ function round(value) {
   return value.toFixed(1);
 }
 
-const parser = createJsonParser({bigintParser: (v) => v});
+const parser = createJsonParser();
 
-const libResult = bench(() => tokenizeJson(json, {}), null, benchDuration);
+const libResult = bench(() => parser(json), null, benchDuration);
 console.log('lib        ', libResult);
 
 const nativeResult = bench(() => JSON.parse(json), null, benchDuration);
 console.log('JSON       ', nativeResult);
 
 const jsonBigintResult = bench(() => JsonBigint.parse(json), null, benchDuration);
-console.log('JsonBigint ', libResult);
+console.log('JsonBigint ', jsonBigintResult);
 
 console.log(`
-${round(nativeResult.mean / libResult.mean)}✕ faster than native JSON
-${round(jsonBigintResult.mean / libResult.mean)}✕ faster than json-bigint
+${round(nativeResult.mean / libResult.mean)}✕ of native JSON
+${round(jsonBigintResult.mean / libResult.mean)}✕ of json-bigint
 `);

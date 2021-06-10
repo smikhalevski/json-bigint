@@ -1,12 +1,12 @@
 import {createJsonParser} from './createJsonParser';
 
-export {createJsonParser} from './createJsonParser';
-export {tokenizeJson} from './tokenizeJson';
+export * from './createJsonParser';
+export * from './tokenizeJson';
 
-const Json: typeof JSON = {
+const exports: typeof JSON = {
   parse: createJsonParser(),
   stringify: () => '',
-  [Symbol.toStringTag]: 'Json',
+  [Symbol.toStringTag]: 'JSON',
 };
 
-export default Json;
+export default exports;

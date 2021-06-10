@@ -1,5 +1,7 @@
 import {IJsonTokenizerOptions, tokenizeJson} from '../main/tokenizeJson';
 import {ResultCode} from '../../../tokenizer-dsl';
+import fs from 'fs';
+import path from 'path';
 
 describe('tokenizeJson', () => {
 
@@ -266,5 +268,11 @@ describe('tokenizeJson', () => {
 
     expect(onColonMock).toHaveBeenCalledTimes(1);
     expect(onColonMock).toHaveBeenCalledWith(0, 1);
+  });
+
+  test('reads test file', () => {
+    const json = fs.readFileSync(path.join(__dirname, './test.json'), 'utf8');
+
+    expect(tokenizeJson(json, {})).toBe(json.length);
   });
 });
