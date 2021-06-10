@@ -15,7 +15,7 @@ const enum Mode {
   ARRAY_COMMA,
 }
 
-interface IJsonParserOptions {
+export interface IJsonParserOptions {
 
   /**
    * Converts integer string to a bigint instance.

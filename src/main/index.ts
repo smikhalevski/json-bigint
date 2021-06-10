@@ -1,12 +1,14 @@
 import {createJsonParser} from './createJsonParser';
+import {createJsonStringifier} from './createJsonStringifier';
 
 export * from './createJsonParser';
+export * from './createJsonStringifier';
 export * from './tokenizeJson';
 
-const exports: typeof JSON = {
+const JsonBigint: typeof JSON = {
   parse: createJsonParser(),
-  stringify: () => '',
-  [Symbol.toStringTag]: 'JSON',
+  stringify: createJsonStringifier(),
+  [Symbol.toStringTag]: 'JsonBigint',
 };
 
-export default exports;
+export default JsonBigint;
