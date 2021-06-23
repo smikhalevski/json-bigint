@@ -1,6 +1,6 @@
 # json-bigint
 
-The symmetrical and backwards compatible JSON serializer/parser with bigint support.
+The symmetrical, backward compatible, and unambiguous JSON serializer/parser with bigint support.
 
 Integers from JSON are parsed as `BigInt` while float numbers are parsed as `number`. 
 
