@@ -1,17 +1,24 @@
-import {allCharBy, char, charBy, CharCodeChecker, maybe, or, ResultCode, seq, Taker, text} from 'tokenizer-dsl';
+import {
+  allCharBy,
+  char,
+  charBy,
+  CharCodeChecker,
+  maybe,
+  or,
+  ResultCode,
+  seq,
+  Taker,
+  text,
+  untilText,
+} from 'tokenizer-dsl';
 import {CharCode} from './CharCode';
+import {decode} from './decoder';
 
 const isSpaceChar: CharCodeChecker = (c) =>
     c === 0x20
     || c === CharCode['\t']
     || c === CharCode['\r']
     || c === CharCode['\n'];
-
-// [0-9A-Fa-f]
-const isHexDigitChar: CharCodeChecker = (c) =>
-    isDigitChar(c)
-    || c >= CharCode['a'] && c <= CharCode['f']
-    || c >= CharCode['A'] && c <= CharCode['F'];
 
 // 1-9
 const isLeadingDigitChar: CharCodeChecker = (c) => c >= CharCode['01'] && c <= CharCode['09'];
@@ -53,90 +60,26 @@ const takeExponent = seq(
     takeDigits,
 );
 
-const takeHexInteger = allCharBy(isHexDigitChar, 4, 4);
-
 const takeTrue = text('true');
 
 const takeFalse = text('false');
 
 const takeNull = text('null');
 
-let lastString = '';
+const takeUntilQuote = untilText('"', true, false);
 
 export const takeString: Taker = (str, i) => {
   if (str.charCodeAt(i) !== CharCode['"']) {
     return ResultCode.NO_MATCH;
   }
   i++;
-
-  const charCount = str.length;
-  let j = i;
-
-  lastString = '';
-
-  while (i < charCount) {
-    switch (str.charCodeAt(i)) {
-
-      case CharCode['"']:
-        lastString += str.substring(j, i);
-        return i + 1;
-
-      case CharCode['\\']:
-        lastString += str.substring(j, i);
-
-        switch (str.charCodeAt(i + 1)) {
-
-          case CharCode['"']:
-            lastString += '"';
-            break;
-
-          case CharCode['\\']:
-            lastString += '\\';
-            break;
-
-          case CharCode['/']:
-            lastString += '/';
-            break;
-
-          case CharCode['b']:
-            lastString += '\b';
-            break;
-
-          case CharCode['n']:
-            lastString += '\n';
-            break;
-
-          case CharCode['r']:
-            lastString += '\r';
-            break;
-
-          case CharCode['t']:
-            lastString += '\t';
-            break;
-
-          case CharCode['u']:
-            const k = takeHexInteger(str, i + 2);
-            if (k >= 0) {
-              lastString += String.fromCharCode(parseInt(str.substring(i + 2, k), 16));
-              i = j = k;
-              continue;
-            }
-
-          default:
-            return ResultCode.ERROR;
-        }
-        i += 2;
-        j = i;
-        break;
-
-      default:
-        i++;
+  while (true) {
+    const j = takeUntilQuote(str, i);
+    if (j === ResultCode.NO_MATCH || str.charCodeAt(j - 2) !== CharCode['\\']) {
+      return j;
     }
+    i = j;
   }
-
-  lastString = '';
-
-  return ResultCode.ERROR;
 };
 
 export type DataCallback = (data: string, start: number, end: number) => void;
@@ -222,7 +165,7 @@ export function tokenizeJson(str: string, options: IJsonTokenizerOptions): numbe
 
     j = takeString(str, i);
     if (j >= 0) {
-      onString?.(lastString, i, j);
+      onString?.(decode(str.substring(i + 1, j - 1)), i, j);
       i = j;
       continue;
     }

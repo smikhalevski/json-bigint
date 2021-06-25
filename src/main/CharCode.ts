@@ -1,6 +1,3 @@
-/**
- * Char codes that are reused across parsers.
- */
 export const enum CharCode {
   '\t' = 9,
   '\n' = 10,
@@ -21,14 +18,4 @@ export const enum CharCode {
   'e' = 101,
   'E' = 69,
   '\\' = 92,
-  '/' = 47,
-  'a' = 97,
-  'f' = 102,
-  'A' = 65,
-  'F' = 70,
-  'b' = 98,
-  'n' = 110,
-  'r' = 114,
-  't' = 116,
-  'u' = 117,
 }

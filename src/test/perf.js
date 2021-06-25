@@ -1,12 +1,11 @@
-const fs = require('fs');
-const path = require('path');
 const bench = require('nodemark');
-const {createJsonParser} = require('../../lib/index-cjs');
+const {createJsonParser, createJsonStringifier} = require('../../lib/index-cjs');
 const JsonBigint = require('json-bigint');
 
 const benchDuration = 10000;
 
-const json = fs.readFileSync(path.join(__dirname, './test.json'), 'utf8');
+const obj = require('./test.json');
+const json = JSON.stringify(obj);
 
 function round(value) {
   return value.toFixed(1);
@@ -14,16 +13,34 @@ function round(value) {
 
 const parser = createJsonParser();
 
-const libResult = bench(() => parser(json), null, benchDuration);
-console.log('lib        ', libResult);
+const parseNativeResult = bench(() => JSON.parse(json), null, benchDuration);
+console.log('JSON        ', parseNativeResult);
 
-const nativeResult = bench(() => JSON.parse(json), null, benchDuration);
-console.log('JSON       ', nativeResult);
+const parseLibResult = bench(() => parser(json), null, benchDuration);
+console.log('lib         ', parseLibResult);
 
-const jsonBigintResult = bench(() => JsonBigint.parse(json), null, benchDuration);
-console.log('JsonBigint ', jsonBigintResult);
+const parseJsonBigintResult = bench(() => JsonBigint.parse(json), null, benchDuration);
+console.log('json-bigint ', parseJsonBigintResult);
 
 console.log(`
-${round(nativeResult.mean / libResult.mean)}✕ of native JSON
-${round(jsonBigintResult.mean / libResult.mean)}✕ of json-bigint
+Parse
+  ${round(parseNativeResult.mean / parseLibResult.mean)}✕ of native JSON
+  ${round(parseJsonBigintResult.mean / parseLibResult.mean)}✕ of json-bigint
+`);
+
+const stringify = createJsonStringifier();
+
+const stringifyNativeResult = bench(() => JSON.stringify(obj), null, benchDuration);
+console.log('JSON        ', stringifyNativeResult);
+
+const stringifyLibResult = bench(() => stringify(obj), null, benchDuration);
+console.log('lib         ', stringifyLibResult);
+
+const stringifyJsonBigintResult = bench(() => JsonBigint.stringify(obj), null, benchDuration);
+console.log('json-bigint ', stringifyJsonBigintResult);
+
+console.log(`
+Stringify
+  ${round(stringifyNativeResult.mean / stringifyLibResult.mean)}✕ of native JSON
+  ${round(stringifyJsonBigintResult.mean / stringifyLibResult.mean)}✕ of json-bigint
 `);

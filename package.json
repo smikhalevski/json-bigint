@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "build": "set -e; tsc; npm run rollup; npm run terser",
-    "rollup": "rollup --input ./lib/index.js --file ./lib/index-cjs.js --format cjs --exports auto --plugin @rollup/plugin-node-resolve",
+    "rollup": "rollup --input ./lib/index.js --file ./lib/index-cjs.js --format cjs --exports named --plugin @rollup/plugin-node-resolve",
     "terser": "terser --compress --mangle toplevel --output ./lib/index-cjs.js -- ./lib/index-cjs.js",
     "clean": "rm -rf ./lib",
     "test": "jest --detectOpenHandles",

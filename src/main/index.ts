@@ -5,10 +5,9 @@ export * from './createJsonParser';
 export * from './createJsonStringifier';
 export * from './tokenizeJson';
 
-const JsonBigint: typeof JSON = {
+const JsonBigint: Omit<typeof JSON, typeof Symbol.toStringTag> = {
   parse: createJsonParser(),
   stringify: createJsonStringifier(),
-  [Symbol.toStringTag]: 'JsonBigint',
 };
 
 export default JsonBigint;
