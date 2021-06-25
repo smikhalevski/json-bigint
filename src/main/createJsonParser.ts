@@ -28,20 +28,28 @@ export interface IJsonParserOptions {
 export type Reviver = (this: any, key: string, value: any) => any;
 
 export function createJsonParser(options: IJsonParserOptions = {}): (str: string, reviver?: Reviver) => any {
-  const {
-    bigIntParser = BigInt,
-  } = options;
+  const {bigIntParser = BigInt} = options;
 
   const queue = new Array(100);
   const modes = new Array<Mode>(100).fill(-1);
 
   let key: string;
+  let unsafeKey = false;
   let index: number;
   let mode: Mode;
 
   const insertChild = (value: unknown, start: number): void => {
     if (mode === Mode.OBJECT_COLON) {
-      queue[index][key] = value;
+      if (unsafeKey) {
+        Object.defineProperty(queue[index], key, {
+          configurable: true,
+          enumerable: true,
+          writable: true,
+          value,
+        });
+      } else {
+        queue[index][key] = value;
+      }
       modes[index] = mode = Mode.OBJECT_PAIR;
       return;
     }
@@ -105,6 +113,7 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
     onString(data, start) {
       if (mode === Mode.OBJECT_START || mode === Mode.OBJECT_COMMA) {
         key = data;
+        unsafeKey = key === '__proto__' || key === 'constructor';
         modes[index] = mode = Mode.OBJECT_KEY;
         return;
       }

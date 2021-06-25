@@ -10,6 +10,10 @@ describe('createJsonParser', () => {
     expect(parseJson('"aaa"')).toBe('aaa');
   });
 
+  test('resolves encoded chars string', () => {
+    expect(parseJson('"con\\u0073\\u0074\\u0072\\u0075\\u0063tor"')).toBe('constructor');
+  });
+
   test('parses number', () => {
     expect(parseJson('123.0')).toBe(123);
   });
@@ -40,6 +44,22 @@ describe('createJsonParser', () => {
 
   test('parses nested objects', () => {
     expect(parseJson('{"foo":{"bar":123.0}}')).toEqual({foo: {bar: 123}});
+  });
+
+  test('prevents prototype poisoning', () => {
+    expect(parseJson('{"__proto__":"okay"}').__proto__).toBe('okay');
+    expect(parseJson('{"\\u005f\\u005f\\u0070\\u0072\\u006f\\u0074\\u006f\\u005f\\u005f":"okay"}').__proto__).toBe('okay');
+  });
+
+  test('prevents constructor poisoning', () => {
+    expect(parseJson('{"constructor":"okay"}').constructor).toBe('okay');
+    expect(parseJson('{"\\u0063\\u006f\\u006e\\u0073\\u0074\\u0072\\u0075\\u0063\\u0074\\u006f\\u0072":"okay"}').constructor).toBe('okay');
+  });
+
+  test('__proto__ is  writable', () => {
+    const obj = parseJson('{"__proto__":"okay"}');
+    obj.__proto__ = 123;
+    expect(obj.__proto__).toBe(123);
   });
 
   test('parses array', () => {
