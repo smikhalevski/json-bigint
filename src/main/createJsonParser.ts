@@ -58,7 +58,7 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
       modes[index] = mode = Mode.ARRAY_ITEM;
       return;
     }
-    throw new SyntaxError(`Unexpected token at ${start}`);
+    throwSyntaxError(`Unexpected token at ${start}`);
   };
 
   const insertLiteral = (value: unknown, start: number): void => {
@@ -88,7 +88,7 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
         mode = index-- === 0 ? Mode.STREAM_END : modes[index];
         return;
       }
-      throw new SyntaxError(`Unexpected token at ${start}`);
+      throwSyntaxError(`Unexpected token at ${start}`);
     },
 
     onArrayStart(start) {
@@ -107,7 +107,7 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
         mode = index-- === 0 ? Mode.STREAM_END : modes[index];
         return;
       }
-      throw new SyntaxError(`Unexpected token at ${start}`);
+      throwSyntaxError(`Unexpected token at ${start}`);
     },
 
     onString(data, start) {
@@ -145,7 +145,7 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
         modes[index] = mode = Mode.OBJECT_COLON;
         return;
       }
-      throw new SyntaxError(`Unexpected token at ${start}`);
+      throwSyntaxError(`Unexpected token at ${start}`);
     },
 
     onComma(start) {
@@ -157,7 +157,7 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
         modes[index] = mode = Mode.ARRAY_COMMA;
         return;
       }
-      throw new SyntaxError(`Unexpected token at ${start}`);
+      throwSyntaxError(`Unexpected token at ${start}`);
     },
   };
 
@@ -168,15 +168,19 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
     const result = tokenizeJson(str, tokenizerOptions);
 
     if (result === ResultCode.ERROR) {
-      throw new SyntaxError(`Unexpected token`);
+      throwSyntaxError(`Unexpected token at 0`);
     }
     if (str.length !== result) {
-      throw new SyntaxError(`Unexpected token at ${result}`);
+      throwSyntaxError(`Unexpected token at ${result}`);
     }
     if (mode !== Mode.STREAM_END) {
-      throw new SyntaxError('Unexpected end');
+      throwSyntaxError('Unexpected end');
     }
 
     return reviver ? revive({'': queue[0]}, '', reviver) : queue[0];
   };
+}
+
+function throwSyntaxError(message: string): never {
+  throw new SyntaxError(message);
 }
