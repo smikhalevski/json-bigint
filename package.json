@@ -22,12 +22,8 @@
     "url": "git+https://github.com/smikhalevski/json-bigint.git"
   },
   "keywords": [
-    "url",
-    "route",
-    "path",
-    "pattern",
-    "parser",
-    "tokenizer"
+    "json",
+    "bigint"
   ],
   "author": "Savva Mikhalevski <smikhalevski@gmail.com>",
   "license": "MIT",
