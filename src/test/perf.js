@@ -1,46 +1,22 @@
-const bench = require('nodemark');
+const {test} = require('@smikhalevski/perf-test');
 const {createJsonParser, createJsonStringifier} = require('../../lib/index-cjs');
 const JsonBigint = require('json-bigint');
+const chalk = require('chalk');
 
-const benchDuration = 10000;
+const objectInput = require('./test.json');
+const jsonInput = JSON.stringify(objectInput);
 
-const obj = require('./test.json');
-const json = JSON.stringify(obj);
+const jsonParser = createJsonParser();
+const jsonStringifier = createJsonStringifier();
 
-function round(value) {
-  return value.toFixed(1);
-}
+console.log(chalk.inverse(' Parse ') + '\n');
 
-const parser = createJsonParser();
+test('JSON        ', () => JSON.parse(jsonInput));
+test('lib         ', () => jsonParser(jsonInput));
+test('json-bigint ', () => JsonBigint.parse(jsonInput));
 
-const parseNativeResult = bench(() => JSON.parse(json), null, benchDuration);
-console.log('JSON        ', parseNativeResult);
+console.log('\n' + chalk.inverse(' Stringify ') + '\n');
 
-const parseLibResult = bench(() => parser(json), null, benchDuration);
-console.log('lib         ', parseLibResult);
-
-const parseJsonBigintResult = bench(() => JsonBigint.parse(json), null, benchDuration);
-console.log('json-bigint ', parseJsonBigintResult);
-
-console.log(`
-Parse
-  ${round(parseNativeResult.mean / parseLibResult.mean)}✕ of native JSON
-  ${round(parseJsonBigintResult.mean / parseLibResult.mean)}✕ of json-bigint
-`);
-
-const stringify = createJsonStringifier();
-
-const stringifyNativeResult = bench(() => JSON.stringify(obj), null, benchDuration);
-console.log('JSON        ', stringifyNativeResult);
-
-const stringifyLibResult = bench(() => stringify(obj), null, benchDuration);
-console.log('lib         ', stringifyLibResult);
-
-const stringifyJsonBigintResult = bench(() => JsonBigint.stringify(obj), null, benchDuration);
-console.log('json-bigint ', stringifyJsonBigintResult);
-
-console.log(`
-Stringify
-  ${round(stringifyNativeResult.mean / stringifyLibResult.mean)}✕ of native JSON
-  ${round(stringifyJsonBigintResult.mean / stringifyLibResult.mean)}✕ of json-bigint
-`);
+test('JSON        ', () => JSON.stringify(objectInput));
+test('lib         ', () => jsonStringifier(objectInput));
+test('json-bigint ', () => JsonBigint.stringify(objectInput));
