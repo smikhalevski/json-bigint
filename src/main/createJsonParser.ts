@@ -30,8 +30,8 @@ export type Reviver = (this: any, key: string, value: any) => any;
 export function createJsonParser(options: IJsonParserOptions = {}): (str: string, reviver?: Reviver) => any {
   const {bigIntParser = BigInt} = options;
 
-  const queue = new Array(100);
-  const modes = new Array<Mode>(100).fill(-1);
+  const queue: Array<any> = [];
+  const modes: Array<Mode> = [];
 
   let key: string;
   let unsafeKey = false;
@@ -161,6 +161,7 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
     },
   };
 
+  // TODO Use context in tokenizer to allow nested parser calls
   return (str, reviver) => {
     index = -1;
     mode = Mode.STREAM_START as Mode;

@@ -1,7 +1,7 @@
 import {IJsonTokenizerOptions, tokenizeJson} from '../main/tokenizeJson';
 import {ResultCode} from '../../../tokenizer-dsl';
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 
 describe('tokenizeJson', () => {
 

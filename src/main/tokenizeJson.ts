@@ -14,29 +14,29 @@ import {
 import {CharCode} from './CharCode';
 import {decode} from './decoder';
 
-const isSpaceChar: CharCodeChecker = (c) =>
-    c === 0x20
-    || c === CharCode['\t']
-    || c === CharCode['\r']
-    || c === CharCode['\n'];
+const isSpaceChar: CharCodeChecker = (charCode) =>
+    charCode === 0x20
+    || charCode === CharCode['\t']
+    || charCode === CharCode['\r']
+    || charCode === CharCode['\n'];
 
 // 1-9
-const isLeadingDigitChar: CharCodeChecker = (c) => c >= CharCode['01'] && c <= CharCode['09'];
+const isLeadingDigitChar: CharCodeChecker = (charCode) => charCode >= CharCode['01'] && charCode <= CharCode['09'];
 
 // 0-9
-const isDigitChar: CharCodeChecker = (c) => c >= CharCode['00'] && c <= CharCode['09'];
+const isDigitChar: CharCodeChecker = (charCode) => charCode >= CharCode['00'] && charCode <= CharCode['09'];
 
 // e or E
-const isExponentChar: CharCodeChecker = (c) => c === CharCode['e'] || c === CharCode['E'];
+const isExponentChar: CharCodeChecker = (charCode) => charCode === CharCode['e'] || charCode === CharCode['E'];
 
 // + or -
-const isSignChar: CharCodeChecker = (c) => c === CharCode['+'] || c === CharCode['-'];
+const isSignChar: CharCodeChecker = (charCode) => charCode === CharCode['+'] || charCode === CharCode['-'];
 
 const takeSpace = allCharBy(isSpaceChar);
 
 const takeMinus = maybe(char(CharCode['-']));
 
-const takeDigits = allCharBy(isDigitChar, 1);
+const takeDigits = allCharBy(isDigitChar, {minimumCount: 1});
 
 // 0 or -123 or 123
 const takeInteger = seq(
@@ -66,7 +66,7 @@ const takeFalse = text('false');
 
 const takeNull = text('null');
 
-const takeUntilQuote = untilText('"', true, false);
+const takeUntilQuote = untilText('"', {inclusive: true});
 
 export const takeString: Taker = (str, i) => {
   if (str.charCodeAt(i) !== CharCode['"']) {
