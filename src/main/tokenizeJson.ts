@@ -1,30 +1,19 @@
-import {
-  allCharBy,
-  char,
-  charBy,
-  CharCodeChecker,
-  maybe,
-  or,
-  ResultCode,
-  seq,
-  Taker,
-  text,
-  untilText,
-} from 'tokenizer-dsl';
+import {all, char, CharCodeChecker, maybe, or, ResultCode, seq, Taker, text} from 'tokenizer-dsl';
 import {CharCode} from './CharCode';
-import {decode} from './decoder';
+
+export const ERROR_CODE = -2;
 
 const isSpaceChar: CharCodeChecker = (charCode) =>
-    charCode === 0x20
+    charCode === 32
     || charCode === CharCode['\t']
     || charCode === CharCode['\r']
     || charCode === CharCode['\n'];
 
 // 1-9
-const isLeadingDigitChar: CharCodeChecker = (charCode) => charCode >= CharCode['01'] && charCode <= CharCode['09'];
+const isLeadingDigitChar: CharCodeChecker = (charCode) => charCode >= 49 /*1*/ && charCode <= 57 /*9*/;
 
 // 0-9
-const isDigitChar: CharCodeChecker = (charCode) => charCode >= CharCode['00'] && charCode <= CharCode['09'];
+const isDigitChar: CharCodeChecker = (charCode) => charCode >= 48 /*0*/ && charCode <= 57 /*9*/;
 
 // e or E
 const isExponentChar: CharCodeChecker = (charCode) => charCode === CharCode['e'] || charCode === CharCode['E'];
@@ -32,32 +21,32 @@ const isExponentChar: CharCodeChecker = (charCode) => charCode === CharCode['e']
 // + or -
 const isSignChar: CharCodeChecker = (charCode) => charCode === CharCode['+'] || charCode === CharCode['-'];
 
-const takeSpace = allCharBy(isSpaceChar);
+const takeSpace = all(char(isSpaceChar));
 
-const takeMinus = maybe(char(CharCode['-']));
+const takeZeroOrManyDigits = all(char(isDigitChar));
 
-const takeDigits = allCharBy(isDigitChar, {minimumCount: 1});
+const takeOneOrManyDigits = all(char(isDigitChar), {minimumCount: 1});
 
 // 0 or -123 or 123
 const takeInteger = seq(
-    takeMinus,
+    maybe(text('-')),
     or(
-        char(CharCode['00']),
+        text('0'),
         seq(
-            charBy(isLeadingDigitChar),
-            allCharBy(isDigitChar),
+            char(isLeadingDigitChar),
+            takeZeroOrManyDigits,
         ),
     ),
 );
 
 // .123
-const takeFraction = seq(char(CharCode['.']), takeDigits);
+const takeFraction = seq(text('.'), takeOneOrManyDigits);
 
 // e5 or E5
 const takeExponent = seq(
-    charBy(isExponentChar),
-    maybe(charBy(isSignChar)),
-    takeDigits,
+    char(isExponentChar),
+    maybe(char(isSignChar)),
+    takeOneOrManyDigits,
 );
 
 const takeTrue = text('true');
@@ -66,55 +55,148 @@ const takeFalse = text('false');
 
 const takeNull = text('null');
 
-const takeUntilQuote = untilText('"', {inclusive: true});
+let lastTakenString = '';
 
 export const takeString: Taker = (str, i) => {
   if (str.charCodeAt(i) !== CharCode['"']) {
     return ResultCode.NO_MATCH;
   }
   i++;
+
+  let quotI = str.indexOf('"', i);
+
+  if (quotI === -1) {
+    // Unterminated string
+    return ERROR_CODE;
+  }
+  if (quotI === i) {
+    // Zero-length string
+    lastTakenString = '';
+    return quotI + 1;
+  }
+
+  let takenString = '';
+
   while (true) {
-    const j = takeUntilQuote(str, i);
-    if (j === ResultCode.NO_MATCH || str.charCodeAt(j - 2) !== CharCode['\\']) {
-      return j;
+
+    let escI = str.indexOf('\\', i);
+
+    if (escI === -1 || escI > quotI) {
+      // No more escape chars in string
+      lastTakenString = takenString + str.substring(i, quotI);
+      return quotI + 1;
     }
-    i = j;
+
+    const chunkStr = str.substring(i, escI);
+
+    switch (str.charCodeAt(escI + 1)) {
+
+      case CharCode['"']:
+        takenString += chunkStr + '"';
+        i = escI + 2;
+        break;
+
+      case CharCode['\\']:
+        takenString += chunkStr + '\\';
+        i = escI + 2;
+        break;
+
+      case CharCode['/']:
+        takenString += chunkStr + '/';
+        i = escI + 2;
+        break;
+
+      case CharCode['b']:
+        takenString += chunkStr + '\b';
+        i = escI + 2;
+        break;
+
+      case CharCode['t']:
+        takenString += chunkStr + '\t';
+        i = escI + 2;
+        break;
+
+      case CharCode['n']:
+        takenString += chunkStr + '\n';
+        i = escI + 2;
+        break;
+
+      case CharCode['f']:
+        takenString += chunkStr + '\f';
+        i = escI + 2;
+        break;
+
+      case CharCode['r']:
+        takenString += chunkStr + '\r';
+        i = escI + 2;
+        break;
+
+      case CharCode['u']:
+        const charCode = parseInt(str.substr(escI + 2, 4), 16);
+
+        if (isNaN(charCode)) {
+          return ERROR_CODE;
+        }
+        takenString += chunkStr + String.fromCharCode(charCode);
+        i = escI + 6;
+        break;
+
+      default:
+        return ERROR_CODE;
+    }
+
+    if (i > quotI) {
+      quotI = str.indexOf('"', i);
+
+      if (quotI === -1) {
+        // Unterminated string
+        return ERROR_CODE;
+      }
+    }
   }
 };
 
-export type DataCallback = (data: string, start: number, end: number) => void;
+export interface IJsonTokenizerOptions<Context> {
 
-export type OffsetCallback = (start: number, end: number) => void;
+  objectStart(context: Context, start: number, end: number): void;
 
-export interface IJsonTokenizerOptions {
-  onObjectStart?: OffsetCallback;
-  onObjectEnd?: OffsetCallback;
-  onArrayStart?: OffsetCallback;
-  onArrayEnd?: OffsetCallback;
-  onString?: DataCallback;
-  onNumber?: DataCallback;
-  onBigInt?: DataCallback;
-  onTrue?: OffsetCallback;
-  onFalse?: OffsetCallback;
-  onNull?: OffsetCallback;
-  onColon?: OffsetCallback;
-  onComma?: OffsetCallback;
+  objectEnd(context: Context, start: number, end: number): void;
+
+  arrayStart(context: Context, start: number, end: number): void;
+
+  arrayEnd(context: Context, start: number, end: number): void;
+
+  string(context: Context, data: string, start: number, end: number): void;
+
+  number(context: Context, data: string, start: number, end: number): void;
+
+  bigInt(context: Context, data: string, start: number, end: number): void;
+
+  true(context: Context, start: number, end: number): void;
+
+  false(context: Context, start: number, end: number): void;
+
+  null(context: Context, start: number, end: number): void;
+
+  colon(context: Context, start: number, end: number): void;
+
+  comma(context: Context, start: number, end: number): void;
 }
 
-export function tokenizeJson(str: string, options: IJsonTokenizerOptions): number {
+export function tokenizeJson<Context>(context: Context, str: string, options: IJsonTokenizerOptions<Context>): number {
   const {
-    onObjectStart,
-    onObjectEnd,
-    onArrayStart,
-    onArrayEnd,
-    onString,
-    onNumber,
-    onBigInt,
-    onTrue,
-    onFalse,
-    onNull,
-    onColon,
-    onComma,
+    objectStart: objectStartCallback,
+    objectEnd: objectEndCallback,
+    arrayStart: arrayStartCallback,
+    arrayEnd: arrayEndCallback,
+    string: stringCallback,
+    number: numberCallback,
+    bigInt: bigIntCallback,
+    true: trueCallback,
+    false: falseCallback,
+    null: nullCallback,
+    colon: colonCallback,
+    comma: commaCallback,
   } = options;
 
   const charCount = str.length;
@@ -133,60 +215,60 @@ export function tokenizeJson(str: string, options: IJsonTokenizerOptions): numbe
     switch (str.charCodeAt(i)) {
 
       case CharCode[':']:
-        onColon?.(i, i + 1);
+        colonCallback(context, i, i + 1);
         i++;
         continue;
 
       case CharCode[',']:
-        onComma?.(i, i + 1);
+        commaCallback(context, i, i + 1);
         i++;
         continue;
 
       case CharCode['{']:
-        onObjectStart?.(i, i + 1);
+        objectStartCallback(context, i, i + 1);
         i++;
         continue;
 
       case CharCode['}']:
-        onObjectEnd?.(i, i + 1);
+        objectEndCallback(context, i, i + 1);
         i++;
         continue;
 
       case CharCode['[']:
-        onArrayStart?.(i, i + 1);
+        arrayStartCallback(context, i, i + 1);
         i++;
         continue;
 
       case CharCode[']']:
-        onArrayEnd?.(i, i + 1);
+        arrayEndCallback(context, i, i + 1);
         i++;
         continue;
     }
 
     j = takeString(str, i);
     if (j >= 0) {
-      onString?.(decode(str.substring(i + 1, j - 1)), i, j);
+      stringCallback(context, lastTakenString, i, j);
       i = j;
       continue;
     }
 
     j = takeTrue(str, i);
     if (j >= 0) {
-      onTrue?.(i, j);
+      trueCallback(context, i, j);
       i = j;
       continue;
     }
 
     j = takeFalse(str, i);
     if (j >= 0) {
-      onFalse?.(i, j);
+      falseCallback(context, i, j);
       i = j;
       continue;
     }
 
     j = takeNull(str, i);
     if (j >= 0) {
-      onNull?.(i, j);
+      nullCallback(context, i, j);
       i = j;
       continue;
     }
@@ -209,15 +291,15 @@ export function tokenizeJson(str: string, options: IJsonTokenizerOptions): numbe
       }
 
       if (numberMode) {
-        onNumber?.(str.substring(i, j), i, j);
+        numberCallback(context, str.substring(i, j), i, j);
       } else {
-        onBigInt?.(str.substring(i, j), i, j);
+        bigIntCallback(context, str.substring(i, j), i, j);
       }
       i = j;
       continue;
     }
 
-    return ResultCode.ERROR;
+    return ERROR_CODE;
   }
 
   return i;

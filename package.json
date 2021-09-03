@@ -10,12 +10,12 @@
     "README.md"
   ],
   "scripts": {
-    "build": "set -e; tsc; npm run rollup; npm run terser",
-    "rollup": "rollup --input ./lib/index.js --file ./lib/index-cjs.js --format cjs --exports named --plugin @rollup/plugin-node-resolve",
+    "build": "tsc && npm run rollup && npm run terser",
+    "rollup": "rollup --external tokenizer-dsl --input ./lib/index.js --file ./lib/index-cjs.js --format cjs --exports named --plugin @rollup/plugin-node-resolve",
     "terser": "terser --compress --mangle toplevel --output ./lib/index-cjs.js -- ./lib/index-cjs.js",
     "clean": "rm -rf ./lib",
     "test": "jest --detectOpenHandles",
-    "perf": "node --max-old-space-size=4096 ./src/test/perf.js"
+    "perf": "[ -d ./lib ] || npm run build && node --expose-gc --max-old-space-size=4096 ./src/test/perf.js"
   },
   "repository": {
     "type": "git",
@@ -56,6 +56,6 @@
     "typescript": "^4.3.2"
   },
   "dependencies": {
-    "tokenizer-dsl": "1.0.0"
+    "tokenizer-dsl": "^2.0.0-next.0"
   }
 }

@@ -1,278 +1,277 @@
-import {IJsonTokenizerOptions, tokenizeJson} from '../main/tokenizeJson';
-import {ResultCode} from '../../../tokenizer-dsl';
+import {ERROR_CODE, IJsonTokenizerOptions, tokenizeJson} from '../main/tokenizeJson';
 import * as fs from 'fs';
 import * as path from 'path';
 
 describe('tokenizeJson', () => {
 
-  const onObjectStartMock = jest.fn();
-  const onObjectEndMock = jest.fn();
-  const onArrayStartMock = jest.fn();
-  const onArrayEndMock = jest.fn();
-  const onStringMock = jest.fn();
-  const onNumberMock = jest.fn();
-  const onBigIntMock = jest.fn();
-  const onTrueMock = jest.fn();
-  const onFalseMock = jest.fn();
-  const onNullMock = jest.fn();
-  const onColonMock = jest.fn();
-  const onCommaMock = jest.fn();
+  const objectStartMock = jest.fn();
+  const objectEndMock = jest.fn();
+  const arrayStartMock = jest.fn();
+  const arrayEndMock = jest.fn();
+  const stringMock = jest.fn();
+  const numberMock = jest.fn();
+  const bigIntMock = jest.fn();
+  const trueMock = jest.fn();
+  const falseMock = jest.fn();
+  const nullMock = jest.fn();
+  const colonMock = jest.fn();
+  const commaMock = jest.fn();
 
-  const options: IJsonTokenizerOptions = {
-    onObjectStart: onObjectStartMock,
-    onObjectEnd: onObjectEndMock,
-    onArrayStart: onArrayStartMock,
-    onArrayEnd: onArrayEndMock,
-    onString: onStringMock,
-    onNumber: onNumberMock,
-    onBigInt: onBigIntMock,
-    onTrue: onTrueMock,
-    onFalse: onFalseMock,
-    onNull: onNullMock,
-    onColon: onColonMock,
-    onComma: onCommaMock,
+  const options: IJsonTokenizerOptions<void> = {
+    objectStart: objectStartMock,
+    objectEnd: objectEndMock,
+    arrayStart: arrayStartMock,
+    arrayEnd: arrayEndMock,
+    string: stringMock,
+    number: numberMock,
+    bigInt: bigIntMock,
+    true: trueMock,
+    false: falseMock,
+    null: nullMock,
+    colon: colonMock,
+    comma: commaMock,
   };
 
   beforeEach(() => {
-    onObjectStartMock.mockReset();
-    onObjectEndMock.mockReset();
-    onArrayStartMock.mockReset();
-    onArrayEndMock.mockReset();
-    onStringMock.mockReset();
-    onNumberMock.mockReset();
-    onBigIntMock.mockReset();
-    onTrueMock.mockReset();
-    onFalseMock.mockReset();
-    onNullMock.mockReset();
-    onColonMock.mockReset();
-    onCommaMock.mockReset();
+    objectStartMock.mockReset();
+    objectEndMock.mockReset();
+    arrayStartMock.mockReset();
+    arrayEndMock.mockReset();
+    stringMock.mockReset();
+    numberMock.mockReset();
+    bigIntMock.mockReset();
+    trueMock.mockReset();
+    falseMock.mockReset();
+    nullMock.mockReset();
+    colonMock.mockReset();
+    commaMock.mockReset();
   });
 
   test('reads strings', () => {
-    expect(tokenizeJson('"abc"', options)).toBe(5);
+    expect(tokenizeJson(null, '"abc"', options)).toBe(5);
 
-    expect(onStringMock).toHaveBeenCalledTimes(1);
-    expect(onStringMock).toHaveBeenCalledWith('abc', 0, 5);
+    expect(stringMock).toHaveBeenCalledTimes(1);
+    expect(stringMock).toHaveBeenCalledWith(null, 'abc', 0, 5);
   });
 
   test('reads strings with escaped UTF chars', () => {
-    expect(tokenizeJson('"abc\\u00c1abc"', options)).toBe(14);
+    expect(tokenizeJson(null, '"abc\\u00c1abc"', options)).toBe(14);
 
-    expect(onStringMock).toHaveBeenCalledTimes(1);
-    expect(onStringMock).toHaveBeenCalledWith('abc\u00c1abc', 0, 14);
+    expect(stringMock).toHaveBeenCalledTimes(1);
+    expect(stringMock).toHaveBeenCalledWith(null, 'abcÁabc', 0, 14);
   });
 
   test('reads strings with escaped tab', () => {
-    expect(tokenizeJson('"\\t"', options)).toBe(4);
+    expect(tokenizeJson(null, '"\\t"', options)).toBe(4);
 
-    expect(onStringMock).toHaveBeenCalledTimes(1);
-    expect(onStringMock).toHaveBeenCalledWith('\t', 0, 4);
+    expect(stringMock).toHaveBeenCalledTimes(1);
+    expect(stringMock).toHaveBeenCalledWith(null, '\t', 0, 4);
   });
 
   test('reads strings with escaped linefeed', () => {
-    expect(tokenizeJson('"\\n"', options)).toBe(4);
+    expect(tokenizeJson(null, '"\\n"', options)).toBe(4);
 
-    expect(onStringMock).toHaveBeenCalledTimes(1);
-    expect(onStringMock).toHaveBeenCalledWith('\n', 0, 4);
+    expect(stringMock).toHaveBeenCalledTimes(1);
+    expect(stringMock).toHaveBeenCalledWith(null, '\n', 0, 4);
   });
 
   test('reads strings with escaped backspace', () => {
-    expect(tokenizeJson('"\\b"', options)).toBe(4);
+    expect(tokenizeJson(null, '"\\b"', options)).toBe(4);
 
-    expect(onStringMock).toHaveBeenCalledTimes(1);
-    expect(onStringMock).toHaveBeenCalledWith('\b', 0, 4);
+    expect(stringMock).toHaveBeenCalledTimes(1);
+    expect(stringMock).toHaveBeenCalledWith(null, '\b', 0, 4);
   });
 
   test('reads strings with escaped solidus', () => {
-    expect(tokenizeJson('"\\/"', options)).toBe(4);
+    expect(tokenizeJson(null, '"\\/"', options)).toBe(4);
 
-    expect(onStringMock).toHaveBeenCalledTimes(1);
-    expect(onStringMock).toHaveBeenCalledWith('/', 0, 4);
+    expect(stringMock).toHaveBeenCalledTimes(1);
+    expect(stringMock).toHaveBeenCalledWith(null, '/', 0, 4);
   });
 
   test('reads strings with escaped reverse solidus', () => {
-    expect(tokenizeJson('"\\\\"', options)).toBe(4);
+    expect(tokenizeJson(null, '"\\\\"', options)).toBe(4);
 
-    expect(onStringMock).toHaveBeenCalledTimes(1);
-    expect(onStringMock).toHaveBeenCalledWith('\\', 0, 4);
+    expect(stringMock).toHaveBeenCalledTimes(1);
+    expect(stringMock).toHaveBeenCalledWith(null, '\\', 0, 4);
   });
 
   test('reads strings with escaped quotation mark', () => {
-    expect(tokenizeJson('"\\""', options)).toBe(4);
+    expect(tokenizeJson(null, '"\\""', options)).toBe(4);
 
-    expect(onStringMock).toHaveBeenCalledTimes(1);
-    expect(onStringMock).toHaveBeenCalledWith('"', 0, 4);
+    expect(stringMock).toHaveBeenCalledTimes(1);
+    expect(stringMock).toHaveBeenCalledWith(null, '"', 0, 4);
   });
 
   test('returns error for unterminated strings', () => {
-    expect(tokenizeJson('"abc', options)).toBe(ResultCode.ERROR);
-    expect(onStringMock).not.toHaveBeenCalled();
+    expect(tokenizeJson(null, '"abc', options)).toBe(ERROR_CODE);
+    expect(stringMock).not.toHaveBeenCalled();
   });
 
   test('returns error for illegal escaped UTF chars', () => {
-    expect(tokenizeJson('"\\uqqqq"', options)).toBe(ResultCode.ERROR);
-    expect(onStringMock).not.toHaveBeenCalled();
+    expect(tokenizeJson(null, '"\\uqqqq"', options)).toBe(ERROR_CODE);
+    expect(stringMock).not.toHaveBeenCalled();
   });
 
   test('returns error for illegal escaped chars', () => {
-    expect(tokenizeJson('"\\q"', options)).toBe(ResultCode.ERROR);
-    expect(onStringMock).not.toHaveBeenCalled();
+    expect(tokenizeJson(null, '"\\q"', options)).toBe(ERROR_CODE);
+    expect(stringMock).not.toHaveBeenCalled();
   });
 
   test('reads zero integer value as bigint', () => {
-    expect(tokenizeJson('0', options)).toBe(1);
+    expect(tokenizeJson(null, '0', options)).toBe(1);
 
-    expect(onBigIntMock).toHaveBeenCalledTimes(1);
-    expect(onBigIntMock).toHaveBeenCalledWith('0', 0, 1);
-    expect(onNumberMock).not.toHaveBeenCalled();
+    expect(bigIntMock).toHaveBeenCalledTimes(1);
+    expect(bigIntMock).toHaveBeenCalledWith(null, '0', 0, 1);
+    expect(numberMock).not.toHaveBeenCalled();
   });
 
   test('reads one integer value as bigint', () => {
-    expect(tokenizeJson('1', options)).toBe(1);
+    expect(tokenizeJson(null, '1', options)).toBe(1);
 
-    expect(onBigIntMock).toHaveBeenCalledTimes(1);
-    expect(onBigIntMock).toHaveBeenCalledWith('1', 0, 1);
-    expect(onNumberMock).not.toHaveBeenCalled();
+    expect(bigIntMock).toHaveBeenCalledTimes(1);
+    expect(bigIntMock).toHaveBeenCalledWith(null, '1', 0, 1);
+    expect(numberMock).not.toHaveBeenCalled();
   });
 
   test('reads negative integer values as bigint', () => {
-    expect(tokenizeJson('-123', options)).toBe(4);
+    expect(tokenizeJson(null, '-123', options)).toBe(4);
 
-    expect(onBigIntMock).toHaveBeenCalledTimes(1);
-    expect(onBigIntMock).toHaveBeenCalledWith('-123', 0, 4);
-    expect(onNumberMock).not.toHaveBeenCalled();
+    expect(bigIntMock).toHaveBeenCalledTimes(1);
+    expect(bigIntMock).toHaveBeenCalledWith(null, '-123', 0, 4);
+    expect(numberMock).not.toHaveBeenCalled();
   });
 
   test('returns error for plus sign', () => {
-    expect(tokenizeJson('+123', options)).toBe(ResultCode.ERROR);
-    expect(tokenizeJson('+123.0', options)).toBe(ResultCode.ERROR);
-    expect(tokenizeJson('+123e5', options)).toBe(ResultCode.ERROR);
-    expect(tokenizeJson('+123E5', options)).toBe(ResultCode.ERROR);
-    expect(tokenizeJson('+123.123E5', options)).toBe(ResultCode.ERROR);
+    expect(tokenizeJson(null, '+123', options)).toBe(ERROR_CODE);
+    expect(tokenizeJson(null, '+123.0', options)).toBe(ERROR_CODE);
+    expect(tokenizeJson(null, '+123e5', options)).toBe(ERROR_CODE);
+    expect(tokenizeJson(null, '+123E5', options)).toBe(ERROR_CODE);
+    expect(tokenizeJson(null, '+123.123E5', options)).toBe(ERROR_CODE);
 
-    expect(onBigIntMock).not.toHaveBeenCalled();
-    expect(onNumberMock).not.toHaveBeenCalled();
+    expect(bigIntMock).not.toHaveBeenCalled();
+    expect(numberMock).not.toHaveBeenCalled();
   });
 
   test('reads floating point values as number', () => {
-    expect(tokenizeJson('0.123', options)).toBe(5);
+    expect(tokenizeJson(null, '0.123', options)).toBe(5);
 
-    expect(onNumberMock).toHaveBeenCalledTimes(1);
-    expect(onNumberMock).toHaveBeenCalledWith('0.123', 0, 5);
-    expect(onBigIntMock).not.toHaveBeenCalled();
+    expect(numberMock).toHaveBeenCalledTimes(1);
+    expect(numberMock).toHaveBeenCalledWith(null, '0.123', 0, 5);
+    expect(bigIntMock).not.toHaveBeenCalled();
   });
 
   test('reads negative floating point values as number', () => {
-    expect(tokenizeJson('-0.123', options)).toBe(6);
+    expect(tokenizeJson(null, '-0.123', options)).toBe(6);
 
-    expect(onNumberMock).toHaveBeenCalledTimes(1);
-    expect(onNumberMock).toHaveBeenCalledWith('-0.123', 0, 6);
-    expect(onBigIntMock).not.toHaveBeenCalled();
+    expect(numberMock).toHaveBeenCalledTimes(1);
+    expect(numberMock).toHaveBeenCalledWith(null, '-0.123', 0, 6);
+    expect(bigIntMock).not.toHaveBeenCalled();
   });
 
   test('reads exponential values as number', () => {
-    expect(tokenizeJson('0e123', options)).toBe(5);
+    expect(tokenizeJson(null, '0e123', options)).toBe(5);
 
-    expect(onNumberMock).toHaveBeenCalledTimes(1);
-    expect(onNumberMock).toHaveBeenCalledWith('0e123', 0, 5);
-    expect(onBigIntMock).not.toHaveBeenCalled();
+    expect(numberMock).toHaveBeenCalledTimes(1);
+    expect(numberMock).toHaveBeenCalledWith(null, '0e123', 0, 5);
+    expect(bigIntMock).not.toHaveBeenCalled();
   });
 
   test('exponent char can be capital', () => {
-    expect(tokenizeJson('0E123', options)).toBe(5);
+    expect(tokenizeJson(null, '0E123', options)).toBe(5);
 
-    expect(onNumberMock).toHaveBeenCalledTimes(1);
-    expect(onNumberMock).toHaveBeenCalledWith('0E123', 0, 5);
-    expect(onBigIntMock).not.toHaveBeenCalled();
+    expect(numberMock).toHaveBeenCalledTimes(1);
+    expect(numberMock).toHaveBeenCalledWith(null, '0E123', 0, 5);
+    expect(bigIntMock).not.toHaveBeenCalled();
   });
 
   test('reads bigint when exponent value is missing', () => {
-    expect(tokenizeJson('0e', options)).toBe(ResultCode.ERROR);
+    expect(tokenizeJson(null, '0e', options)).toBe(ERROR_CODE);
 
-    expect(onNumberMock).not.toHaveBeenCalled();
-    expect(onBigIntMock).toHaveBeenCalled();
+    expect(numberMock).not.toHaveBeenCalled();
+    expect(bigIntMock).toHaveBeenCalled();
   });
 
-  test('reads exponential values with leading zeroes in exponent', () => {
-    expect(tokenizeJson('0e00123', options)).toBe(7);
+  test('reads exponential values with leading zeroes', () => {
+    expect(tokenizeJson(null, '0e00123', options)).toBe(7);
 
-    expect(onNumberMock).toHaveBeenCalledTimes(1);
-    expect(onNumberMock).toHaveBeenCalledWith('0e00123', 0, 7);
+    expect(numberMock).toHaveBeenCalledTimes(1);
+    expect(numberMock).toHaveBeenCalledWith(null, '0e00123', 0, 7);
   });
 
   test('reads fractions and exponents at the same time', () => {
-    expect(tokenizeJson('123.123e00123', options)).toBe(13);
+    expect(tokenizeJson(null, '123.123e00123', options)).toBe(13);
 
-    expect(onNumberMock).toHaveBeenCalledTimes(1);
-    expect(onNumberMock).toHaveBeenCalledWith('123.123e00123', 0, 13);
+    expect(numberMock).toHaveBeenCalledTimes(1);
+    expect(numberMock).toHaveBeenCalledWith(null, '123.123e00123', 0, 13);
   });
 
   test('reads true', () => {
-    expect(tokenizeJson('true', options)).toBe(4);
+    expect(tokenizeJson(null, 'true', options)).toBe(4);
 
-    expect(onTrueMock).toHaveBeenCalledTimes(1);
-    expect(onTrueMock).toHaveBeenCalledWith(0, 4);
+    expect(trueMock).toHaveBeenCalledTimes(1);
+    expect(trueMock).toHaveBeenCalledWith(null, 0, 4);
   });
 
   test('reads false', () => {
-    expect(tokenizeJson('false', options)).toBe(5);
+    expect(tokenizeJson(null, 'false', options)).toBe(5);
 
-    expect(onFalseMock).toHaveBeenCalledTimes(1);
-    expect(onFalseMock).toHaveBeenCalledWith(0, 5);
+    expect(falseMock).toHaveBeenCalledTimes(1);
+    expect(falseMock).toHaveBeenCalledWith(null, 0, 5);
   });
 
   test('reads null', () => {
-    expect(tokenizeJson('null', options)).toBe(4);
+    expect(tokenizeJson(null, 'null', options)).toBe(4);
 
-    expect(onNullMock).toHaveBeenCalledTimes(1);
-    expect(onNullMock).toHaveBeenCalledWith(0, 4);
+    expect(nullMock).toHaveBeenCalledTimes(1);
+    expect(nullMock).toHaveBeenCalledWith(null, 0, 4);
   });
 
   test('reads object start', () => {
-    expect(tokenizeJson('{', options)).toBe(1);
+    expect(tokenizeJson(null, '{', options)).toBe(1);
 
-    expect(onObjectStartMock).toHaveBeenCalledTimes(1);
-    expect(onObjectStartMock).toHaveBeenCalledWith(0, 1);
+    expect(objectStartMock).toHaveBeenCalledTimes(1);
+    expect(objectStartMock).toHaveBeenCalledWith(null, 0, 1);
   });
 
   test('reads object end', () => {
-    expect(tokenizeJson('}', options)).toBe(1);
+    expect(tokenizeJson(null, '}', options)).toBe(1);
 
-    expect(onObjectEndMock).toHaveBeenCalledTimes(1);
-    expect(onObjectEndMock).toHaveBeenCalledWith(0, 1);
+    expect(objectEndMock).toHaveBeenCalledTimes(1);
+    expect(objectEndMock).toHaveBeenCalledWith(null, 0, 1);
   });
 
   test('reads array start', () => {
-    expect(tokenizeJson('[', options)).toBe(1);
+    expect(tokenizeJson(null, '[', options)).toBe(1);
 
-    expect(onArrayStartMock).toHaveBeenCalledTimes(1);
-    expect(onArrayStartMock).toHaveBeenCalledWith(0, 1);
+    expect(arrayStartMock).toHaveBeenCalledTimes(1);
+    expect(arrayStartMock).toHaveBeenCalledWith(null, 0, 1);
   });
 
   test('reads array end', () => {
-    expect(tokenizeJson(']', options)).toBe(1);
+    expect(tokenizeJson(null, ']', options)).toBe(1);
 
-    expect(onArrayEndMock).toHaveBeenCalledTimes(1);
-    expect(onArrayEndMock).toHaveBeenCalledWith(0, 1);
+    expect(arrayEndMock).toHaveBeenCalledTimes(1);
+    expect(arrayEndMock).toHaveBeenCalledWith(null, 0, 1);
   });
 
   test('reads comma', () => {
-    expect(tokenizeJson(',', options)).toBe(1);
+    expect(tokenizeJson(null, ',', options)).toBe(1);
 
-    expect(onCommaMock).toHaveBeenCalledTimes(1);
-    expect(onCommaMock).toHaveBeenCalledWith(0, 1);
+    expect(commaMock).toHaveBeenCalledTimes(1);
+    expect(commaMock).toHaveBeenCalledWith(null, 0, 1);
   });
 
   test('reads colon', () => {
-    expect(tokenizeJson(':', options)).toBe(1);
+    expect(tokenizeJson(null, ':', options)).toBe(1);
 
-    expect(onColonMock).toHaveBeenCalledTimes(1);
-    expect(onColonMock).toHaveBeenCalledWith(0, 1);
+    expect(colonMock).toHaveBeenCalledTimes(1);
+    expect(colonMock).toHaveBeenCalledWith(null, 0, 1);
   });
 
   test('reads test file', () => {
     const json = fs.readFileSync(path.join(__dirname, './test.json'), 'utf8');
 
-    expect(tokenizeJson(json, {})).toBe(json.length);
+    expect(tokenizeJson(null, json, options)).toBe(json.length);
   });
 });
