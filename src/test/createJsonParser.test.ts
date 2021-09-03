@@ -83,10 +83,10 @@ describe('createJsonParser', () => {
   });
 
   test('throws on object after string', () => {
-    expect(() => parseJson('"aaa"{}')).toThrow(new SyntaxError('Unexpected token at 5'))
+    expect(() => parseJson('"aaa"{}')).toThrow(new SyntaxError('Unexpected token at 5'));
   });
 
   test('throws on string after object', () => {
-    expect(() => parseJson('{}"aaa"')).toThrow(new SyntaxError('Unexpected token at 2'))
+    expect(() => parseJson('{}"aaa"')).toThrow(new SyntaxError('Unexpected token at 2'));
   });
 });

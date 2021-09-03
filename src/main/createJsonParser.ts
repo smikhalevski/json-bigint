@@ -1,5 +1,7 @@
-import {ERROR_CODE, IJsonTokenizerOptions, tokenizeJson} from './tokenizeJson';
+import {IJsonTokenizerOptions, tokenizeJson} from './tokenizeJson';
 import {revive} from './revive';
+import {ResultCode} from 'tokenizer-dsl';
+import {createObjectPool} from 'yaop';
 
 const enum Mode {
   STREAM_START,
@@ -13,6 +15,20 @@ const enum Mode {
   ARRAY_ITEM,
   ARRAY_COMMA,
 }
+
+const contextPool = createObjectPool<IJsonParserContext>(() => ({
+  queue: [],
+  modes: [],
+  key: '',
+  unsafeKey: false,
+  index: -1,
+  mode: Mode.STREAM_START,
+}), (context) => {
+  context.key = '';
+  context.unsafeKey = false;
+  context.index = -1;
+  context.mode = Mode.STREAM_START;
+});
 
 export interface IJsonParserOptions {
 
@@ -174,28 +190,27 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
 
   return (str, reviver) => {
 
-    const context: IJsonParserContext = {
-      queue: [],
-      modes: [],
-      key: '',
-      unsafeKey: false,
-      index: -1,
-      mode: Mode.STREAM_START,
-    };
+    const context = contextPool.take();
+    let result;
+    let mode;
+    let root;
 
-    const result = tokenizeJson(context, str, tokenizerOptions);
+    result = tokenizeJson(context, str, tokenizerOptions);
+    mode = context.mode;
+    root = context.queue[0];
+    contextPool.release(context);
 
-    if (result === ERROR_CODE) {
+    if (result < ResultCode.NO_MATCH) {
       throwSyntaxError(`Unexpected token at 0`);
     }
     if (str.length !== result) {
       throwSyntaxError(`Unexpected token at ${result}`);
     }
-    if (context.mode !== Mode.STREAM_END) {
+    if (mode !== Mode.STREAM_END) {
       throwSyntaxError('Unexpected end');
     }
 
-    return reviver ? revive({'': context.queue[0]}, '', reviver) : context.queue[0];
+    return reviver ? revive({'': root}, '', reviver) : root;
   };
 }
 

@@ -11,12 +11,14 @@ const jsonStringifier = createJsonStringifier();
 
 console.log(chalk.inverse(' Parse ') + '\n');
 
-test('JSON        ', () => JSON.parse(jsonInput));
-test('lib         ', () => jsonParser(jsonInput));
-test('json-bigint ', () => JsonBigint.parse(jsonInput));
+test('JSON        ', () => JSON.parse(jsonInput), {timeout: 20_000, targetRme: .002});
+gc();
+test('lib         ', () => jsonParser(jsonInput), {timeout: 20_000, targetRme: .002});
+gc();
+test('json-bigint ', () => JsonBigint.parse(jsonInput), {timeout: 20_000, targetRme: .002});
 
-console.log('\n' + chalk.inverse(' Stringify ') + '\n');
-
-test('JSON        ', () => JSON.stringify(objectInput));
-test('lib         ', () => jsonStringifier(objectInput));
-test('json-bigint ', () => JsonBigint.stringify(objectInput));
+// console.log('\n' + chalk.inverse(' Stringify ') + '\n');
+//
+// test('JSON        ', () => JSON.stringify(objectInput));
+// test('lib         ', () => jsonStringifier(objectInput));
+// test('json-bigint ', () => JsonBigint.stringify(objectInput));

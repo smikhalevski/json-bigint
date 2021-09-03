@@ -1,4 +1,4 @@
-import {ERROR_CODE, IJsonTokenizerOptions, tokenizeJson} from '../main/tokenizeJson';
+import {ErrorCode, IJsonTokenizerOptions, tokenizeJson} from '../main/tokenizeJson';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -104,17 +104,17 @@ describe('tokenizeJson', () => {
   });
 
   test('returns error for unterminated strings', () => {
-    expect(tokenizeJson(null, '"abc', options)).toBe(ERROR_CODE);
+    expect(tokenizeJson(null, '"abc', options)).toBe(ErrorCode.UNTERMINATED_STRING);
     expect(stringMock).not.toHaveBeenCalled();
   });
 
-  test('returns error for illegal escaped UTF chars', () => {
-    expect(tokenizeJson(null, '"\\uqqqq"', options)).toBe(ERROR_CODE);
+  test('returns error for invalid escaped UTF char codes', () => {
+    expect(tokenizeJson(null, '"\\uqqqq"', options)).toBe(ErrorCode.INVALID_UTF_CHAR_CODE);
     expect(stringMock).not.toHaveBeenCalled();
   });
 
   test('returns error for illegal escaped chars', () => {
-    expect(tokenizeJson(null, '"\\q"', options)).toBe(ERROR_CODE);
+    expect(tokenizeJson(null, '"\\q"', options)).toBe(ErrorCode.ILLEGAL_ESCAPE_CHAR);
     expect(stringMock).not.toHaveBeenCalled();
   });
 
@@ -143,11 +143,11 @@ describe('tokenizeJson', () => {
   });
 
   test('returns error for plus sign', () => {
-    expect(tokenizeJson(null, '+123', options)).toBe(ERROR_CODE);
-    expect(tokenizeJson(null, '+123.0', options)).toBe(ERROR_CODE);
-    expect(tokenizeJson(null, '+123e5', options)).toBe(ERROR_CODE);
-    expect(tokenizeJson(null, '+123E5', options)).toBe(ERROR_CODE);
-    expect(tokenizeJson(null, '+123.123E5', options)).toBe(ERROR_CODE);
+    expect(tokenizeJson(null, '+123', options)).toBe(ErrorCode.UNEXPECTED_TOKEN);
+    expect(tokenizeJson(null, '+123.0', options)).toBe(ErrorCode.UNEXPECTED_TOKEN);
+    expect(tokenizeJson(null, '+123e5', options)).toBe(ErrorCode.UNEXPECTED_TOKEN);
+    expect(tokenizeJson(null, '+123E5', options)).toBe(ErrorCode.UNEXPECTED_TOKEN);
+    expect(tokenizeJson(null, '+123.123E5', options)).toBe(ErrorCode.UNEXPECTED_TOKEN);
 
     expect(bigIntMock).not.toHaveBeenCalled();
     expect(numberMock).not.toHaveBeenCalled();
@@ -186,7 +186,7 @@ describe('tokenizeJson', () => {
   });
 
   test('reads bigint when exponent value is missing', () => {
-    expect(tokenizeJson(null, '0e', options)).toBe(ERROR_CODE);
+    expect(tokenizeJson(null, '0e', options)).toBe(ErrorCode.UNEXPECTED_TOKEN);
 
     expect(numberMock).not.toHaveBeenCalled();
     expect(bigIntMock).toHaveBeenCalled();

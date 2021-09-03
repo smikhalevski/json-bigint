@@ -1,7 +1,12 @@
 import {all, char, CharCodeChecker, maybe, or, ResultCode, seq, Taker, text} from 'tokenizer-dsl';
 import {CharCode} from './CharCode';
 
-export const ERROR_CODE = -2;
+export const enum ErrorCode {
+  UNEXPECTED_TOKEN = -2,
+  UNTERMINATED_STRING = -3,
+  ILLEGAL_ESCAPE_CHAR = -4,
+  INVALID_UTF_CHAR_CODE = -5,
+}
 
 const isSpaceChar: CharCodeChecker = (charCode) =>
     charCode === 32
@@ -55,7 +60,7 @@ const takeFalse = text('false');
 
 const takeNull = text('null');
 
-let lastTakenString = '';
+let lastTakenStr = '';
 
 export const takeString: Taker = (str, i) => {
   if (str.charCodeAt(i) !== CharCode['"']) {
@@ -64,26 +69,22 @@ export const takeString: Taker = (str, i) => {
   i++;
 
   let quotI = str.indexOf('"', i);
+  let takenStr = '';
 
   if (quotI === -1) {
-    // Unterminated string
-    return ERROR_CODE;
+    return ErrorCode.UNTERMINATED_STRING;
   }
   if (quotI === i) {
-    // Zero-length string
-    lastTakenString = '';
+    lastTakenStr = takenStr;
     return quotI + 1;
   }
-
-  let takenString = '';
 
   while (true) {
 
     let escI = str.indexOf('\\', i);
 
     if (escI === -1 || escI > quotI) {
-      // No more escape chars in string
-      lastTakenString = takenString + str.substring(i, quotI);
+      lastTakenStr = takenStr + str.substring(i, quotI);
       return quotI + 1;
     }
 
@@ -92,42 +93,42 @@ export const takeString: Taker = (str, i) => {
     switch (str.charCodeAt(escI + 1)) {
 
       case CharCode['"']:
-        takenString += chunkStr + '"';
+        takenStr += chunkStr + '"';
         i = escI + 2;
         break;
 
       case CharCode['\\']:
-        takenString += chunkStr + '\\';
+        takenStr += chunkStr + '\\';
         i = escI + 2;
         break;
 
       case CharCode['/']:
-        takenString += chunkStr + '/';
+        takenStr += chunkStr + '/';
         i = escI + 2;
         break;
 
       case CharCode['b']:
-        takenString += chunkStr + '\b';
+        takenStr += chunkStr + '\b';
         i = escI + 2;
         break;
 
       case CharCode['t']:
-        takenString += chunkStr + '\t';
+        takenStr += chunkStr + '\t';
         i = escI + 2;
         break;
 
       case CharCode['n']:
-        takenString += chunkStr + '\n';
+        takenStr += chunkStr + '\n';
         i = escI + 2;
         break;
 
       case CharCode['f']:
-        takenString += chunkStr + '\f';
+        takenStr += chunkStr + '\f';
         i = escI + 2;
         break;
 
       case CharCode['r']:
-        takenString += chunkStr + '\r';
+        takenStr += chunkStr + '\r';
         i = escI + 2;
         break;
 
@@ -135,22 +136,21 @@ export const takeString: Taker = (str, i) => {
         const charCode = parseInt(str.substr(escI + 2, 4), 16);
 
         if (isNaN(charCode)) {
-          return ERROR_CODE;
+          return ErrorCode.INVALID_UTF_CHAR_CODE;
         }
-        takenString += chunkStr + String.fromCharCode(charCode);
+        takenStr += chunkStr + String.fromCharCode(charCode);
         i = escI + 6;
         break;
 
       default:
-        return ERROR_CODE;
+        return ErrorCode.ILLEGAL_ESCAPE_CHAR;
     }
 
     if (i > quotI) {
       quotI = str.indexOf('"', i);
 
       if (quotI === -1) {
-        // Unterminated string
-        return ERROR_CODE;
+        return ErrorCode.UNTERMINATED_STRING;
       }
     }
   }
@@ -215,39 +215,36 @@ export function tokenizeJson<Context>(context: Context, str: string, options: IJ
     switch (str.charCodeAt(i)) {
 
       case CharCode[':']:
-        colonCallback(context, i, i + 1);
-        i++;
+        colonCallback(context, i++, i);
         continue;
 
       case CharCode[',']:
-        commaCallback(context, i, i + 1);
-        i++;
+        commaCallback(context, i++, i);
         continue;
 
       case CharCode['{']:
-        objectStartCallback(context, i, i + 1);
-        i++;
+        objectStartCallback(context, i++, i);
         continue;
 
       case CharCode['}']:
-        objectEndCallback(context, i, i + 1);
-        i++;
+        objectEndCallback(context, i++, i);
         continue;
 
       case CharCode['[']:
-        arrayStartCallback(context, i, i + 1);
-        i++;
+        arrayStartCallback(context, i++, i);
         continue;
 
       case CharCode[']']:
-        arrayEndCallback(context, i, i + 1);
-        i++;
+        arrayEndCallback(context, i++, i);
         continue;
     }
 
     j = takeString(str, i);
+    if (j < ResultCode.NO_MATCH) {
+      return j;
+    }
     if (j >= 0) {
-      stringCallback(context, lastTakenString, i, j);
+      stringCallback(context, lastTakenStr, i, j);
       i = j;
       continue;
     }
@@ -299,7 +296,7 @@ export function tokenizeJson<Context>(context: Context, str: string, options: IJ
       continue;
     }
 
-    return ERROR_CODE;
+    return ErrorCode.UNEXPECTED_TOKEN;
   }
 
   return i;
