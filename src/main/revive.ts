@@ -1,4 +1,4 @@
-import {Reviver} from './createJsonParser';
+import {Reviver} from './types';
 
 export function revive(parent: any, key: string, reviver: Reviver): any {
   const obj = parent[key];

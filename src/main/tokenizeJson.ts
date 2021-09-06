@@ -1,17 +1,9 @@
 import {all, char, CharCodeChecker, maybe, or, ResultCode, seq, Taker, text} from 'tokenizer-dsl';
 import {CharCode} from './CharCode';
-
-const fromCharCode = String.fromCharCode;
-
-export const enum ErrorCode {
-  UNEXPECTED_TOKEN = -2,
-  UNTERMINATED_STRING = -3,
-  ILLEGAL_ESCAPE_CHAR = -4,
-  INVALID_UTF_CHAR_CODE = -5,
-}
+import {ErrorCode, ITokenHandler} from './types';
 
 const isSpaceChar: CharCodeChecker = (charCode) =>
-    charCode === 32
+    charCode === CharCode[' ']
     || charCode === CharCode['\t']
     || charCode === CharCode['\r']
     || charCode === CharCode['\n'];
@@ -141,7 +133,7 @@ export const takeString: Taker = (str, i) => {
         if (isNaN(charCode)) {
           return ErrorCode.INVALID_UTF_CHAR_CODE;
         }
-        takenStr += chunkStr + fromCharCode(charCode);
+        takenStr += chunkStr + String.fromCharCode(charCode);
         i = escI + 6;
         break;
 
@@ -159,34 +151,7 @@ export const takeString: Taker = (str, i) => {
   }
 };
 
-export interface ITokenHandler<Context> {
-
-  objectStart(context: Context, start: number, end: number): void;
-
-  objectEnd(context: Context, start: number, end: number): void;
-
-  arrayStart(context: Context, start: number, end: number): void;
-
-  arrayEnd(context: Context, start: number, end: number): void;
-
-  string(context: Context, data: string, start: number, end: number): void;
-
-  number(context: Context, data: string, start: number, end: number): void;
-
-  bigInt(context: Context, data: string, start: number, end: number): void;
-
-  true(context: Context, start: number, end: number): void;
-
-  false(context: Context, start: number, end: number): void;
-
-  null(context: Context, start: number, end: number): void;
-
-  colon(context: Context, start: number, end: number): void;
-
-  comma(context: Context, start: number, end: number): void;
-}
-
-export function tokenizeJson<Context>(context: Context, str: string, handler: ITokenHandler<Context>): number {
+export function tokenizeJson(str: string, handler: ITokenHandler): number {
   const {
     objectStart: objectStartCallback,
     objectEnd: objectEndCallback,
@@ -218,27 +183,27 @@ export function tokenizeJson<Context>(context: Context, str: string, handler: IT
     switch (str.charCodeAt(i)) {
 
       case CharCode[':']:
-        colonCallback(context, i++, i);
+        colonCallback(i++, i);
         continue;
 
       case CharCode[',']:
-        commaCallback(context, i++, i);
+        commaCallback(i++, i);
         continue;
 
       case CharCode['{']:
-        objectStartCallback(context, i++, i);
+        objectStartCallback(i++, i);
         continue;
 
       case CharCode['}']:
-        objectEndCallback(context, i++, i);
+        objectEndCallback(i++, i);
         continue;
 
       case CharCode['[']:
-        arrayStartCallback(context, i++, i);
+        arrayStartCallback(i++, i);
         continue;
 
       case CharCode[']']:
-        arrayEndCallback(context, i++, i);
+        arrayEndCallback(i++, i);
         continue;
     }
 
@@ -247,28 +212,28 @@ export function tokenizeJson<Context>(context: Context, str: string, handler: IT
       return j;
     }
     if (j >= 0) {
-      stringCallback(context, lastTakenStr, i, j);
+      stringCallback(lastTakenStr, i, j);
       i = j;
       continue;
     }
 
     j = takeTrue(str, i);
     if (j >= 0) {
-      trueCallback(context, i, j);
+      trueCallback(i, j);
       i = j;
       continue;
     }
 
     j = takeFalse(str, i);
     if (j >= 0) {
-      falseCallback(context, i, j);
+      falseCallback(i, j);
       i = j;
       continue;
     }
 
     j = takeNull(str, i);
     if (j >= 0) {
-      nullCallback(context, i, j);
+      nullCallback(i, j);
       i = j;
       continue;
     }
@@ -293,9 +258,9 @@ export function tokenizeJson<Context>(context: Context, str: string, handler: IT
       const data = str.substring(i, j);
 
       if (numberMode) {
-        numberCallback(context, data, i, j);
+        numberCallback(data, i, j);
       } else {
-        bigIntCallback(context, data, i, j);
+        bigIntCallback(data, i, j);
       }
       i = j;
       continue;

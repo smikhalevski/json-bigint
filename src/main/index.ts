@@ -11,3 +11,8 @@ const JsonBigint: Omit<typeof JSON, typeof Symbol.toStringTag> = {
 };
 
 export default JsonBigint;
+export {ITokenHandler} from './types';
+export {ErrorCode} from './types';
+export {Reviver} from './types';
+export {IJsonParserOptions} from './types';
+export {Replacer} from './types';

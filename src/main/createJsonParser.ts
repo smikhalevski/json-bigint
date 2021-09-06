@@ -1,7 +1,7 @@
-import {ITokenHandler, tokenizeJson} from './tokenizeJson';
+import {tokenizeJson} from './tokenizeJson';
 import {revive} from './revive';
 import {ResultCode} from 'tokenizer-dsl';
-import {createObjectPool} from 'yaop';
+import {IJsonParserOptions, ITokenHandler, JsonParser} from './types';
 
 const enum Mode {
   STREAM_START,
@@ -16,52 +16,17 @@ const enum Mode {
   ARRAY_COMMA,
 }
 
-interface IJsonParserContext {
-  queue: Array<any>;
-  modes: Array<Mode>;
-  key: string;
-  index: number;
-  mode: Mode;
-}
-
-function createJsonParserContext(): IJsonParserContext {
-  return {
-    queue: [],
-    modes: [],
-    key: '',
-    index: -1,
-    mode: Mode.STREAM_START,
-  };
-}
-
-function resetJsonParserContext(context: IJsonParserContext): void {
-  context.queue.fill(null);
-  context.modes.fill(-1);
-  context.key = '';
-  context.index = -1;
-  context.mode = Mode.STREAM_START;
-}
-
-const contextPool = createObjectPool(createJsonParserContext, resetJsonParserContext);
-
-export interface IJsonParserOptions {
-
-  /**
-   * Converts integer string to a bigint instance.
-   *
-   * @param str The string with a valid integer number.
-   * @default BigInt
-   */
-  bigIntParser?(str: string): any;
-}
-
-export type Reviver = (this: any, key: string, value: any) => any;
-
-export function createJsonParser(options: IJsonParserOptions = {}): (str: string, reviver?: Reviver) => any {
+export function createJsonParser(options: IJsonParserOptions = {}): JsonParser {
   const {bigIntParser = BigInt} = options;
 
-  const insertChild = (context: IJsonParserContext, value: unknown, start: number): void => {
-    const {queue, modes, key, index, mode} = context;
+  const queue: Array<any> = [];
+  const modes: Array<Mode> = [];
+
+  let key: string;
+  let index: number;
+  let mode: Mode;
+
+  const insertChild = (value: unknown, start: number): void => {
 
     if (mode === Mode.OBJECT_COLON) {
       if (key === '__proto__' || key === 'constructor') {
@@ -74,125 +39,112 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
       } else {
         queue[index][key] = value;
       }
-      modes[index] = context.mode = Mode.OBJECT_PAIR;
+      modes[index] = mode = Mode.OBJECT_PAIR;
       return;
     }
 
     if (mode === Mode.ARRAY_START || mode === Mode.ARRAY_COMMA) {
       queue[index].push(value);
-      modes[index] = context.mode = Mode.ARRAY_ITEM;
+      modes[index] = mode = Mode.ARRAY_ITEM;
       return;
     }
     throwSyntaxError(`Unexpected token at ${start}`);
   };
 
-  const insertLiteral = (context: IJsonParserContext, value: unknown, start: number): void => {
-    const {queue, modes, mode} = context;
+  const insertLiteral = (value: unknown, start: number): void => {
 
     if (mode === Mode.STREAM_START) {
       queue[0] = value;
-      modes[0] = context.mode = Mode.STREAM_END;
+      modes[0] = mode = Mode.STREAM_END;
       return;
     }
-    insertChild(context, value, start);
+    insertChild(value, start);
   };
 
-  const handler: ITokenHandler<IJsonParserContext> = {
+  const handler: ITokenHandler = {
 
-    objectStart(context, start) {
+    objectStart(start) {
       const value = {};
 
-      if (context.mode !== Mode.STREAM_START) {
-        insertChild(context, value, start);
+      if (mode !== Mode.STREAM_START) {
+        insertChild(value, start);
       }
-      const index = ++context.index;
-      context.queue[index] = value;
-      context.modes[index] = context.mode = Mode.OBJECT_START;
+      ++index;
+      queue[index] = value;
+      modes[index] = mode = Mode.OBJECT_START;
     },
 
-    objectEnd(context, start) {
-      const {mode} = context;
-
+    objectEnd(start) {
       if (mode === Mode.OBJECT_PAIR || mode === Mode.OBJECT_START) {
-        const index = --context.index;
-        context.mode = index === -1 ? Mode.STREAM_END : context.modes[index];
+        mode = --index === -1 ? Mode.STREAM_END : modes[index];
         return;
       }
       throwSyntaxError(`Unexpected token at ${start}`);
     },
 
-    arrayStart(context, start) {
+    arrayStart(start) {
       const value: Array<any> = [];
 
-      if (context.mode !== Mode.STREAM_START) {
-        insertChild(context, value, start);
+      if (mode !== Mode.STREAM_START) {
+        insertChild(value, start);
       }
-      const index = ++context.index;
-      context.queue[index] = value;
-      context.modes[index] = context.mode = Mode.ARRAY_START;
+      ++index;
+      queue[index] = value;
+      modes[index] = mode = Mode.ARRAY_START;
     },
 
-    arrayEnd(context, start) {
-      const {mode} = context;
-
+    arrayEnd(start) {
       if (mode === Mode.ARRAY_ITEM || mode === Mode.ARRAY_START) {
-        const index = --context.index;
-        context.mode = index === -1 ? Mode.STREAM_END : context.modes[index];
+        mode = --index === -1 ? Mode.STREAM_END : modes[index];
         return;
       }
       throwSyntaxError(`Unexpected token at ${start}`);
     },
 
-    string(context, data, start) {
-      const {mode} = context;
-
+    string(data, start) {
       if (mode === Mode.OBJECT_START || mode === Mode.OBJECT_COMMA) {
-        context.key = data;
-        context.modes[context.index] = context.mode = Mode.OBJECT_KEY;
+        key = data;
+        modes[index] = mode = Mode.OBJECT_KEY;
         return;
       }
-      insertLiteral(context, data, start);
+      insertLiteral(data, start);
     },
 
-    number(context, data, start) {
-      insertLiteral(context, parseFloat(data), start);
+    number(data, start) {
+      insertLiteral(parseFloat(data), start);
     },
 
-    bigInt(context, data, start) {
-      insertLiteral(context, bigIntParser(data), start);
+    bigInt(data, start) {
+      insertLiteral(bigIntParser(data), start);
     },
 
-    true(context, start) {
-      insertLiteral(context, true, start);
+    true(start) {
+      insertLiteral(true, start);
     },
 
-    false(context, start) {
-      insertLiteral(context, false, start);
+    false(start) {
+      insertLiteral(false, start);
     },
 
-    null(context, start) {
-      insertLiteral(context, null, start);
+    null(start) {
+      insertLiteral(null, start);
     },
 
-    colon(context, start) {
-      const {mode} = context;
-
+    colon(start) {
       if (mode === Mode.OBJECT_KEY) {
-        context.modes[context.index] = context.mode = Mode.OBJECT_COLON;
+        modes[index] = mode = Mode.OBJECT_COLON;
         return;
       }
       throwSyntaxError(`Unexpected token at ${start}`);
     },
 
-    comma(context, start) {
-      const {mode} = context;
-
+    comma(start) {
       if (mode === Mode.OBJECT_PAIR) {
-        context.modes[context.index] = context.mode = Mode.OBJECT_COMMA;
+        modes[index] = mode = Mode.OBJECT_COMMA;
         return;
       }
       if (mode === Mode.ARRAY_ITEM) {
-        context.modes[context.index] = context.mode = Mode.ARRAY_COMMA;
+        modes[index] = mode = Mode.ARRAY_COMMA;
         return;
       }
       throwSyntaxError(`Unexpected token at ${start}`);
@@ -201,15 +153,10 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
 
   return (str, reviver) => {
 
-    const context = contextPool.take();
-    let result;
-    let mode;
-    let root;
+    index = -1;
+    mode = Mode.STREAM_START as Mode;
 
-    result = tokenizeJson(context, str, handler);
-    mode = context.mode;
-    root = context.queue[0];
-    contextPool.release(context);
+    const result = tokenizeJson(str, handler);
 
     if (result < ResultCode.NO_MATCH) {
       throwSyntaxError(`Unexpected token at 0`);
@@ -221,7 +168,12 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
       throwSyntaxError('Unexpected end');
     }
 
-    return reviver ? revive({'': root}, '', reviver) : root;
+    const root = reviver ? revive({'': queue[0]}, '', reviver) : queue[0];
+
+    queue.fill(null);
+    modes.fill(-1);
+
+    return root;
   };
 }
 

@@ -1,12 +1,11 @@
 import {encode} from './decoder';
+import {JsonStringifier, Replacer} from './types';
 
 const LINE_FEED = '\n';
 
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
-type Replacer = (this: any, key: string, value: any) => any;
-
-export function createJsonStringifier(): (value: any, replacer?: Replacer | Array<unknown> | null, space?: string | number | null) => string {
+export function createJsonStringifier(): JsonStringifier {
   return (value, replacer, space) => {
 
     let fields = null;
