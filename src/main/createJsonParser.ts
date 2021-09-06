@@ -1,4 +1,4 @@
-import {IJsonTokenizerOptions, tokenizeJson} from './tokenizeJson';
+import {ITokenHandler, tokenizeJson} from './tokenizeJson';
 import {revive} from './revive';
 import {ResultCode} from 'tokenizer-dsl';
 import {createObjectPool} from 'yaop';
@@ -16,49 +16,55 @@ const enum Mode {
   ARRAY_COMMA,
 }
 
-const contextPool = createObjectPool<IJsonParserContext>(() => ({
-  queue: [],
-  modes: [],
-  key: '',
-  unsafeKey: false,
-  index: -1,
-  mode: Mode.STREAM_START,
-}), (context) => {
+interface IJsonParserContext {
+  queue: Array<any>;
+  modes: Array<Mode>;
+  key: string;
+  index: number;
+  mode: Mode;
+}
+
+function createJsonParserContext(): IJsonParserContext {
+  return {
+    queue: [],
+    modes: [],
+    key: '',
+    index: -1,
+    mode: Mode.STREAM_START,
+  };
+}
+
+function resetJsonParserContext(context: IJsonParserContext): void {
+  context.queue.fill(null);
+  context.modes.fill(-1);
   context.key = '';
-  context.unsafeKey = false;
   context.index = -1;
   context.mode = Mode.STREAM_START;
-});
+}
+
+const contextPool = createObjectPool(createJsonParserContext, resetJsonParserContext);
 
 export interface IJsonParserOptions {
 
   /**
    * Converts integer string to a bigint instance.
    *
+   * @param str The string with a valid integer number.
    * @default BigInt
    */
-  bigIntParser?: (str: string) => any;
+  bigIntParser?(str: string): any;
 }
 
 export type Reviver = (this: any, key: string, value: any) => any;
-
-interface IJsonParserContext {
-  queue: Array<any>;
-  modes: Array<Mode>;
-  key: string;
-  unsafeKey: boolean;
-  index: number;
-  mode: Mode;
-}
 
 export function createJsonParser(options: IJsonParserOptions = {}): (str: string, reviver?: Reviver) => any {
   const {bigIntParser = BigInt} = options;
 
   const insertChild = (context: IJsonParserContext, value: unknown, start: number): void => {
-    const {queue, modes, key, unsafeKey, index, mode} = context;
+    const {queue, modes, key, index, mode} = context;
 
     if (mode === Mode.OBJECT_COLON) {
-      if (unsafeKey) {
+      if (key === '__proto__' || key === 'constructor') {
         Object.defineProperty(queue[index], key, {
           configurable: true,
           enumerable: true,
@@ -66,11 +72,12 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
           value,
         });
       } else {
-        context.queue[index][key] = value;
+        queue[index][key] = value;
       }
       modes[index] = context.mode = Mode.OBJECT_PAIR;
       return;
     }
+
     if (mode === Mode.ARRAY_START || mode === Mode.ARRAY_COMMA) {
       queue[index].push(value);
       modes[index] = context.mode = Mode.ARRAY_ITEM;
@@ -90,7 +97,7 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
     insertChild(context, value, start);
   };
 
-  const tokenizerOptions: IJsonTokenizerOptions<IJsonParserContext> = {
+  const handler: ITokenHandler<IJsonParserContext> = {
 
     objectStart(context, start) {
       const value = {};
@@ -105,8 +112,10 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
 
     objectEnd(context, start) {
       const {mode} = context;
+
       if (mode === Mode.OBJECT_PAIR || mode === Mode.OBJECT_START) {
-        context.mode = context.index-- === 0 ? Mode.STREAM_END : context.modes[context.index];
+        const index = --context.index;
+        context.mode = index === -1 ? Mode.STREAM_END : context.modes[index];
         return;
       }
       throwSyntaxError(`Unexpected token at ${start}`);
@@ -125,8 +134,10 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
 
     arrayEnd(context, start) {
       const {mode} = context;
+
       if (mode === Mode.ARRAY_ITEM || mode === Mode.ARRAY_START) {
-        context.mode = context.index-- === 0 ? Mode.STREAM_END : context.modes[context.index];
+        const index = --context.index;
+        context.mode = index === -1 ? Mode.STREAM_END : context.modes[index];
         return;
       }
       throwSyntaxError(`Unexpected token at ${start}`);
@@ -136,8 +147,7 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
       const {mode} = context;
 
       if (mode === Mode.OBJECT_START || mode === Mode.OBJECT_COMMA) {
-        const key = context.key = data;
-        context.unsafeKey = key === '__proto__' || key === 'constructor';
+        context.key = data;
         context.modes[context.index] = context.mode = Mode.OBJECT_KEY;
         return;
       }
@@ -176,6 +186,7 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
 
     comma(context, start) {
       const {mode} = context;
+
       if (mode === Mode.OBJECT_PAIR) {
         context.modes[context.index] = context.mode = Mode.OBJECT_COMMA;
         return;
@@ -195,7 +206,7 @@ export function createJsonParser(options: IJsonParserOptions = {}): (str: string
     let mode;
     let root;
 
-    result = tokenizeJson(context, str, tokenizerOptions);
+    result = tokenizeJson(context, str, handler);
     mode = context.mode;
     root = context.queue[0];
     contextPool.release(context);

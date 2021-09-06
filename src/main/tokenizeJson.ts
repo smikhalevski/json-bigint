@@ -1,6 +1,8 @@
 import {all, char, CharCodeChecker, maybe, or, ResultCode, seq, Taker, text} from 'tokenizer-dsl';
 import {CharCode} from './CharCode';
 
+const fromCharCode = String.fromCharCode;
+
 export const enum ErrorCode {
   UNEXPECTED_TOKEN = -2,
   UNTERMINATED_STRING = -3,
@@ -63,6 +65,7 @@ const takeNull = text('null');
 let lastTakenStr = '';
 
 export const takeString: Taker = (str, i) => {
+
   if (str.charCodeAt(i) !== CharCode['"']) {
     return ResultCode.NO_MATCH;
   }
@@ -81,7 +84,7 @@ export const takeString: Taker = (str, i) => {
 
   while (true) {
 
-    let escI = str.indexOf('\\', i);
+    const escI = str.indexOf('\\', i);
 
     if (escI === -1 || escI > quotI) {
       lastTakenStr = takenStr + str.substring(i, quotI);
@@ -138,7 +141,7 @@ export const takeString: Taker = (str, i) => {
         if (isNaN(charCode)) {
           return ErrorCode.INVALID_UTF_CHAR_CODE;
         }
-        takenStr += chunkStr + String.fromCharCode(charCode);
+        takenStr += chunkStr + fromCharCode(charCode);
         i = escI + 6;
         break;
 
@@ -156,7 +159,7 @@ export const takeString: Taker = (str, i) => {
   }
 };
 
-export interface IJsonTokenizerOptions<Context> {
+export interface ITokenHandler<Context> {
 
   objectStart(context: Context, start: number, end: number): void;
 
@@ -183,7 +186,7 @@ export interface IJsonTokenizerOptions<Context> {
   comma(context: Context, start: number, end: number): void;
 }
 
-export function tokenizeJson<Context>(context: Context, str: string, options: IJsonTokenizerOptions<Context>): number {
+export function tokenizeJson<Context>(context: Context, str: string, handler: ITokenHandler<Context>): number {
   const {
     objectStart: objectStartCallback,
     objectEnd: objectEndCallback,
@@ -197,7 +200,7 @@ export function tokenizeJson<Context>(context: Context, str: string, options: IJ
     null: nullCallback,
     colon: colonCallback,
     comma: commaCallback,
-  } = options;
+  } = handler;
 
   const charCount = str.length;
 
@@ -287,10 +290,12 @@ export function tokenizeJson<Context>(context: Context, str: string, options: IJ
         j = k;
       }
 
+      const data = str.substring(i, j);
+
       if (numberMode) {
-        numberCallback(context, str.substring(i, j), i, j);
+        numberCallback(context, data, i, j);
       } else {
-        bigIntCallback(context, str.substring(i, j), i, j);
+        bigIntCallback(context, data, i, j);
       }
       i = j;
       continue;
