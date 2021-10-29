@@ -4,7 +4,9 @@ import {createJsonParser} from '../main/createJsonParser';
 
 describe('createJsonParser', () => {
 
-  const parseJson = createJsonParser();
+  const parseJson = createJsonParser({
+    parseBigInt: BigInt,
+  });
 
   test('parses string', () => {
     expect(parseJson('"aaa"')).toBe('aaa');

@@ -1,15 +1,12 @@
 const {test} = require('@smikhalevski/perf-test');
-const {createJsonParser, createJsonStringifier, tokenizeJson} = require('../../lib/index-cjs');
-const JsonBigint = require('json-bigint');
+const {parse, stringify, tokenizeJson} = require('../../lib/index-cjs');
+const JsonBigInt = require('json-bigint');
 const chalk = require('chalk');
 
 const objectInput = require('./test.json');
 const jsonInput = JSON.stringify(objectInput);
 
-const jsonParser = createJsonParser();
-const jsonStringifier = createJsonStringifier();
-
-const tokOpt = {
+const tokenizerOptions = {
   objectStart: () => undefined,
   objectEnd: () => undefined,
   arrayStart: () => undefined,
@@ -24,17 +21,25 @@ const tokOpt = {
   comma: () => undefined,
 };
 
-console.log(chalk.inverse(' Parse ') + '\n');
+console.log(chalk.inverse(' Tokenize ') + '\n');
 
+gc();
+test('lib ', () => tokenizeJson(jsonInput, tokenizerOptions), {timeout: 20_000, targetRme: .002});
+
+console.log('\n' + chalk.inverse(' Parse ') + '\n');
+
+gc();
 test('JSON        ', () => JSON.parse(jsonInput), {timeout: 20_000, targetRme: .002});
 gc();
-// test('lib         ', () => tokenizeJson(jsonInput, tokOpt), {timeout: 20_000, targetRme: .002});
-test('lib         ', () => jsonParser(jsonInput), {timeout: 20_000, targetRme: .002});
+test('lib         ', () => parse(jsonInput), {timeout: 20_000, targetRme: .002});
 gc();
-test('json-bigint ', () => JsonBigint.parse(jsonInput), {timeout: 20_000, targetRme: .002});
+test('json-bigint ', () => JsonBigInt.parse(jsonInput), {timeout: 20_000, targetRme: .002});
 
-// console.log('\n' + chalk.inverse(' Stringify ') + '\n');
-//
-// test('JSON        ', () => JSON.stringify(objectInput));
-// test('lib         ', () => jsonStringifier(objectInput));
-// test('json-bigint ', () => JsonBigint.stringify(objectInput));
+console.log('\n' + chalk.inverse(' Stringify ') + '\n');
+
+gc();
+test('JSON        ', () => JSON.stringify(objectInput));
+gc();
+test('lib         ', () => stringify(objectInput));
+gc();
+test('json-bigint ', () => JsonBigInt.stringify(objectInput));

@@ -16,8 +16,8 @@ const enum Mode {
   ARRAY_COMMA,
 }
 
-export function createJsonParser(options: IJsonParserOptions = {}): JsonParser {
-  const {bigIntParser = BigInt} = options;
+export function createJsonParser(options: IJsonParserOptions): JsonParser {
+  const {parseBigInt} = options;
 
   const queue: Array<any> = [];
   const modes: Array<Mode> = [];
@@ -115,7 +115,7 @@ export function createJsonParser(options: IJsonParserOptions = {}): JsonParser {
     },
 
     bigInt(data, start) {
-      insertLiteral(bigIntParser(data), start);
+      insertLiteral(parseBigInt(data), start);
     },
 
     true(start) {
@@ -159,7 +159,7 @@ export function createJsonParser(options: IJsonParserOptions = {}): JsonParser {
     const result = tokenizeJson(str, handler);
 
     if (result < ResultCode.NO_MATCH) {
-      throwSyntaxError(`Unexpected token at 0`);
+      throwSyntaxError('Unexpected token at 0');
     }
     if (str.length !== result) {
       throwSyntaxError(`Unexpected token at ${result}`);

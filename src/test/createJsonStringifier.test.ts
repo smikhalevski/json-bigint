@@ -2,7 +2,10 @@ import {createJsonParser, createJsonStringifier} from '../main';
 
 describe('createJsonStringifier', () => {
 
-  const stringifyJson = createJsonStringifier();
+  const stringifyJson = createJsonStringifier({
+    isBigInt: (value) => typeof value === 'bigint',
+    stringifyBigInt: String,
+  });
 
   test('stringifies bigint', () => {
     expect(stringifyJson({foo: BigInt(123)})).toBe('{"foo":123}');
@@ -67,8 +70,16 @@ describe('createJsonStringifier', () => {
     expect(replacerMock).toHaveBeenNthCalledWith(4, 'c', 3);
   });
 
+  test('respects spaces in empty objects', () => {
+    expect(stringifyJson({}, null, 2)).toBe('{}');
+  });
+
   test('respects spaces in objects', () => {
     expect(stringifyJson({a: 1, b: 2}, null, 2)).toBe('{\n  "a":1.0,\n  "b":2.0\n}');
+  });
+
+  test('respects spaces in empty arrays', () => {
+    expect(stringifyJson([], null, 2)).toBe('[]');
   });
 
   test('respects spaces in arrays', () => {
@@ -88,8 +99,15 @@ describe('createJsonStringifier', () => {
   });
 
   test('serialization is symmetrical', () => {
-    const parseJson = createJsonParser();
+    const parseJson = createJsonParser({
+      parseBigInt: BigInt,
+    });
     expect(parseJson(stringifyJson({foo: BigInt(123)}))).toEqual({foo: BigInt(123)});
     expect(parseJson(stringifyJson({foo: 123}))).toEqual({foo: 123});
+  });
+
+  test('can be parsed by JSON', () => {
+    expect(JSON.parse(stringifyJson({foo: BigInt(123)}))).toEqual({foo: 123});
+    expect(JSON.parse(stringifyJson({foo: 123}))).toEqual({foo: 123});
   });
 });

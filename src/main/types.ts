@@ -6,29 +6,17 @@ export const enum ErrorCode {
 }
 
 export interface ITokenHandler {
-
   objectStart(start: number, end: number): void;
-
   objectEnd(start: number, end: number): void;
-
   arrayStart(start: number, end: number): void;
-
   arrayEnd(start: number, end: number): void;
-
   string(data: string, start: number, end: number): void;
-
   number(data: string, start: number, end: number): void;
-
   bigInt(data: string, start: number, end: number): void;
-
   true(start: number, end: number): void;
-
   false(start: number, end: number): void;
-
   null(start: number, end: number): void;
-
   colon(start: number, end: number): void;
-
   comma(start: number, end: number): void;
 }
 
@@ -38,9 +26,25 @@ export interface IJsonParserOptions {
    * Converts integer string to a bigint instance.
    *
    * @param str The string with a valid integer number.
-   * @default BigInt
    */
-  bigIntParser?(str: string): any;
+  parseBigInt(str: string): any;
+}
+
+export interface IJsonStringifierOptions {
+
+  /**
+   * Returns `true` if value is a `BigInt` instance.
+   *
+   * @param value The value to check.
+   */
+  isBigInt(value: any): boolean;
+
+  /**
+   * Converts a bigint instance to an string.
+   *
+   * @param value The bigint instance to convert.
+   */
+  stringifyBigInt(value: any): string;
 }
 
 export type Reviver = (this: any, key: string, value: any) => any;
