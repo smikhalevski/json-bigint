@@ -18,7 +18,7 @@ JsonBigInt.stringify({foo: 123n, bar: 123}); // → '{"foo":123,"bar":123.0}'
 JsonBigInt.parse('{"foo":123,"bar":123.0}'); // → {foo: 123n, bar: 123}
 ```
 
-You can create parsers and serializers:
+You can create custom parsers and serializers:
 
 ```ts
 import bigint from 'bigint';
@@ -46,5 +46,5 @@ Results are in operations per second. The higher number is better.
 
 |  | native JSON | @smikhalevski/json-bigint | [@sidorares/json-bigint](https://github.com/sidorares/json-bigint) |
 | --------- | ---: | ---: | ---: |
-| parse     | 49,352.14 | 15,136.76 | 8,874.56  |
-| stringify | 55,066.67 | 27,529.31 | 17,210.03 |
+| parse     | 49 352 | 15 136 | 8 874  |
+| stringify | 55 066 | 27 529 | 17 210 |
