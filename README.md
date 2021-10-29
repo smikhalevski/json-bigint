@@ -37,3 +37,14 @@ stringifyJson({foo: bigint(123), bar: 123}); // → '{"foo":123,"bar":123.0}'
 
 parseJson('{"foo":123,"bar":123.0}'); // → {foo: bigint(123), bar: 123}
 ```
+
+# Performance
+
+Clone this repo and use `npm ci && npm run perf` to run the performance testsuite.
+
+Results are in operations per second. The higher number is better.
+
+|  | native JSON | @smikhalevski/json-bigint | [@sidorares/json-bigint](https://github.com/sidorares/json-bigint) |
+| --------- | ---: | ---: | ---: |
+| parse     | 49,352.14 | 15,136.76 | 8,874.56  |
+| stringify | 55,066.67 | 27,529.31 | 17,210.03 |
