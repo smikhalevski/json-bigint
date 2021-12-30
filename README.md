@@ -1,4 +1,4 @@
-# json-bigint
+# json-bigint [![build](https://github.com/smikhalevski/json-bigint/actions/workflows/master.yml/badge.svg?branch=master&event=push)](https://github.com/smikhalevski/json-bigint/actions/workflows/master.yml)
 
 The symmetrical, backward compatible, and unambiguous JSON serializer/parser with bigint support.
 
