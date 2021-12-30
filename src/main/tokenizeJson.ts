@@ -9,10 +9,10 @@ const isSpaceChar: CharCodeChecker = (charCode) =>
     || charCode === CharCode['\n'];
 
 // 1-9
-const isLeadingDigitChar: CharCodeChecker = (charCode) => charCode >= 49 /*1*/ && charCode <= 57 /*9*/;
+const isLeadingDigitChar: CharCodeChecker = (charCode) => charCode >= CharCode['1'] && charCode <= CharCode['9'];
 
 // 0-9
-const isDigitChar: CharCodeChecker = (charCode) => charCode >= 48 /*0*/ && charCode <= 57 /*9*/;
+const isDigitChar: CharCodeChecker = (charCode) => charCode >= CharCode['0'] && charCode <= CharCode['9'];
 
 // e or E
 const isExponentChar: CharCodeChecker = (charCode) => charCode === CharCode['e'] || charCode === CharCode['E'];
