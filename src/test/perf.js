@@ -1,7 +1,5 @@
-const {test} = require('@smikhalevski/perf-test');
 const {parse, stringify, tokenizeJson} = require('../../lib/index-cjs');
-const JsonBigInt = require('json-bigint');
-const chalk = require('chalk');
+const jsonBigint = require('json-bigint');
 
 const objectInput = require('./test.json');
 const jsonInput = JSON.stringify(objectInput);
@@ -21,25 +19,39 @@ const tokenizerOptions = {
   comma: () => undefined,
 };
 
-console.log(chalk.inverse(' Tokenize ') + '\n');
+describe('Tokenize', () => {
 
-gc();
-test('lib ', () => tokenizeJson(jsonInput, tokenizerOptions), {timeout: 20_000, targetRme: .002});
+  test('lib', (measure) => {
+    measure(() => tokenizeJson(jsonInput, tokenizerOptions));
+  });
+});
 
-console.log('\n' + chalk.inverse(' Parse ') + '\n');
+describe('Parse', () => {
 
-gc();
-test('JSON        ', () => JSON.parse(jsonInput), {timeout: 20_000, targetRme: .002});
-gc();
-test('lib         ', () => parse(jsonInput), {timeout: 20_000, targetRme: .002});
-gc();
-test('json-bigint ', () => JsonBigInt.parse(jsonInput), {timeout: 20_000, targetRme: .002});
+  test('JSON', (measure) => {
+    measure(() => JSON.parse(jsonInput));
+  });
 
-console.log('\n' + chalk.inverse(' Stringify ') + '\n');
+  test('lib', (measure) => {
+    measure(() => parse(jsonInput));
+  });
 
-gc();
-test('JSON        ', () => JSON.stringify(objectInput));
-gc();
-test('lib         ', () => stringify(objectInput));
-gc();
-test('json-bigint ', () => JsonBigInt.stringify(objectInput));
+  test('json-bigint', (measure) => {
+    measure(() => jsonBigint.parse(jsonInput));
+  });
+});
+
+describe('Stringify', () => {
+
+  test('JSON', (measure) => {
+    measure(() => JSON.stringify(objectInput));
+  });
+
+  test('lib', (measure) => {
+    measure(() => stringify(objectInput));
+  });
+
+  test('json-bigint', (measure) => {
+    measure(() => jsonBigint.stringify(objectInput));
+  });
+});
