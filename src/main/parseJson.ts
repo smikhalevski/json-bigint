@@ -14,9 +14,10 @@ export interface ParserContext {
 
 function put(value: any, context: ParserContext): void {
   const {stack, cursor} = context;
+  const parent = stack[cursor];
 
   if (context.arrayMode) {
-    stack[cursor].push(value);
+    parent.push(value);
     return;
   }
 
@@ -25,7 +26,17 @@ function put(value: any, context: ParserContext): void {
   if (objectKey === null) {
     die('Object key expected');
   }
-  stack[cursor][objectKey] = value;
+  if (objectKey === '__proto__' || objectKey === 'constructor') {
+    Object.defineProperty(parent, objectKey, {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value,
+    });
+  } else {
+    parent[objectKey] = value;
+  }
+
   context.objectKey = null;
 }
 
@@ -65,22 +76,13 @@ const jsonTokenHandler: TokenHandler<Type, ParserContext> = {
         break;
 
       case Type.STRING: {
-        const parent = context.stack[context.cursor];
         const value = context.input.substr(offset + 1, length - 2);
 
-        if (context.arrayMode) {
-          parent.push(value);
+        if (!context.arrayMode && context.objectKey === null) {
+          context.objectKey = value;
           break;
         }
-
-        const {objectKey} = context;
-
-        if (objectKey === null) {
-          context.objectKey = value;
-        } else {
-          parent[objectKey] = value;
-          context.objectKey = null;
-        }
+        put(value, context);
         break;
       }
 
