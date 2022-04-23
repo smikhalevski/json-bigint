@@ -1,16 +1,10 @@
 import {TokenHandler} from 'tokenizer-dsl';
+import {decodeString} from './decodeString';
 import {jsonTokenizer, Type} from './jsonTokenizer';
+import {ParserContext} from './parser-types';
 import {revive} from './revive';
 import {Reviver} from './types';
-
-export interface ParserContext {
-  stack: any[];
-  cursor: number;
-  arrayMode: boolean;
-  objectKey: string | null;
-  input: string;
-  parseBigInt: (str: string) => unknown;
-}
+import {die} from './utils';
 
 function put(value: any, context: ParserContext): void {
   const {stack, cursor} = context;
@@ -76,7 +70,7 @@ const jsonTokenHandler: TokenHandler<Type, ParserContext> = {
         break;
 
       case Type.STRING: {
-        const value = context.input.substr(offset + 1, length - 2);
+        const value = decodeString(context.input.substr(offset + 1, length - 2));
 
         if (!context.arrayMode && context.objectKey === null) {
           context.objectKey = value;
@@ -112,6 +106,7 @@ const jsonTokenHandler: TokenHandler<Type, ParserContext> = {
   },
 
   error(type, offset, errorCode, context) {
+    die('Error ' + errorCode + ' occurred at ' + offset);
   },
 };
 
@@ -130,6 +125,3 @@ export function parseJson(input: string, reviver?: Reviver, parseBigInt: (str: s
   return reviver ? revive(parent, '', reviver) : parent[''];
 }
 
-function die(message?: string): never {
-  throw new Error(message);
-}

@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import {parseJson} from '../main/parseJson';
 
 describe('parseJson', () => {
@@ -80,5 +82,11 @@ describe('parseJson', () => {
 
   test('throws on string after object', () => {
     expect(() => parseJson('{}"aaa"')).toThrow();
+  });
+
+  test('parses huge input', () => {
+    const json = fs.readFileSync(path.join(__dirname, './test.json'), 'utf8');
+
+    expect(parseJson(json, undefined, parseInt)).toEqual(JSON.parse(json));
   });
 });

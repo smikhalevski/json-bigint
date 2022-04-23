@@ -1,30 +1,8 @@
-const {parse, stringify, tokenizeJson} = require('../../lib/index-cjs');
+const {parse, stringify} = require('../../lib/index-cjs');
 const jsonBigint = require('json-bigint');
 
 const objectInput = require('./test.json');
 const jsonInput = JSON.stringify(objectInput);
-
-const tokenizerOptions = {
-  objectStart: () => undefined,
-  objectEnd: () => undefined,
-  arrayStart: () => undefined,
-  arrayEnd: () => undefined,
-  string: () => undefined,
-  number: () => undefined,
-  bigInt: () => undefined,
-  true: () => undefined,
-  false: () => undefined,
-  null: () => undefined,
-  colon: () => undefined,
-  comma: () => undefined,
-};
-
-describe('Tokenize', () => {
-
-  test('lib', (measure) => {
-    measure(() => tokenizeJson(jsonInput, tokenizerOptions));
-  });
-}, {targetRme: 0.001});
 
 describe('Parse', () => {
 

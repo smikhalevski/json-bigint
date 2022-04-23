@@ -1,4 +1,5 @@
-import {createJsonParser, createJsonStringifier} from '../main';
+import {createJsonStringifier} from '../main';
+import {parseJson} from '../main/parseJson';
 
 describe('createJsonStringifier', () => {
 
@@ -99,9 +100,6 @@ describe('createJsonStringifier', () => {
   });
 
   test('serialization is symmetrical', () => {
-    const parseJson = createJsonParser({
-      parseBigInt: BigInt,
-    });
     expect(parseJson(stringifyJson({foo: BigInt(123)}))).toEqual({foo: BigInt(123)});
     expect(parseJson(stringifyJson({foo: 123}))).toEqual({foo: 123});
   });
