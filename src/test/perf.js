@@ -24,7 +24,7 @@ describe('Tokenize', () => {
   test('lib', (measure) => {
     measure(() => tokenizeJson(jsonInput, tokenizerOptions));
   });
-});
+}, {targetRme: 0.001});
 
 describe('Parse', () => {
 
@@ -39,7 +39,7 @@ describe('Parse', () => {
   test('json-bigint', (measure) => {
     measure(() => jsonBigint.parse(jsonInput));
   });
-});
+}, {targetRme: 0.001});
 
 describe('Stringify', () => {
 
@@ -54,4 +54,4 @@ describe('Stringify', () => {
   test('json-bigint', (measure) => {
     measure(() => jsonBigint.stringify(objectInput));
   });
-});
+}, {targetRme: 0.001});
