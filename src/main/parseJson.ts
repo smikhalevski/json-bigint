@@ -37,15 +37,16 @@ function put(value: any, context: ParserContext): void {
 const jsonTokenHandler: TokenHandler<Type, ParserContext> = {
 
   token(type, offset, length, context) {
+    let value: any;
+
     switch (type) {
 
-      case Type.OBJECT_START: {
-        const value = {};
+      case Type.OBJECT_START:
+        value = {};
         put(value, context);
         context.stack[++context.cursor] = value;
         context.arrayMode = false;
         break;
-      }
 
       case Type.OBJECT_END:
         if (context.arrayMode) {
@@ -54,13 +55,12 @@ const jsonTokenHandler: TokenHandler<Type, ParserContext> = {
         context.arrayMode = context.stack[--context.cursor] instanceof Array;
         break;
 
-      case Type.ARRAY_START: {
-        const value: any[] = [];
+      case Type.ARRAY_START:
+        value = [];
         put(value, context);
         context.stack[++context.cursor] = value;
         context.arrayMode = true;
         break;
-      }
 
       case Type.ARRAY_END:
         if (!context.arrayMode) {
@@ -69,8 +69,8 @@ const jsonTokenHandler: TokenHandler<Type, ParserContext> = {
         context.arrayMode = context.stack[--context.cursor] instanceof Array;
         break;
 
-      case Type.STRING: {
-        const value = decodeString(context.input.substr(offset + 1, length - 2));
+      case Type.STRING:
+        value = decodeString(context.input.substr(offset + 1, length - 2));
 
         if (!context.arrayMode && context.objectKey === null) {
           context.objectKey = value;
@@ -78,7 +78,6 @@ const jsonTokenHandler: TokenHandler<Type, ParserContext> = {
         }
         put(value, context);
         break;
-      }
 
       case Type.COLON:
         break;
@@ -124,4 +123,3 @@ export function parseJson(input: string, reviver?: Reviver, parseBigInt: (str: s
 
   return reviver ? revive(parent, '', reviver) : parent[''];
 }
-

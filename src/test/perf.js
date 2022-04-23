@@ -1,8 +1,40 @@
 const {parse, stringify} = require('../../lib/index-cjs');
 const jsonBigint = require('json-bigint');
 
+const largeJsonInput = JSON.stringify(require('../../package-lock.json'), null, 2);
+const smallJsonInput = JSON.stringify(require('../../package.json'), null, 2);
 const objectInput = require('./test.json');
 const jsonInput = JSON.stringify(objectInput);
+
+describe('Parse large input', () => {
+
+  test('JSON', (measure) => {
+    measure(() => JSON.parse(largeJsonInput));
+  });
+
+  test('lib', (measure) => {
+    measure(() => parse(largeJsonInput));
+  });
+
+  test('json-bigint', (measure) => {
+    measure(() => jsonBigint.parse(largeJsonInput));
+  });
+}, {targetRme: 0.001});
+
+describe('Parse small input', () => {
+
+  test('JSON', (measure) => {
+    measure(() => JSON.parse(smallJsonInput));
+  });
+
+  test('lib', (measure) => {
+    measure(() => parse(smallJsonInput));
+  });
+
+  test('json-bigint', (measure) => {
+    measure(() => jsonBigint.parse(smallJsonInput));
+  });
+}, {targetRme: 0.001});
 
 describe('Parse', () => {
 

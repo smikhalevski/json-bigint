@@ -98,17 +98,17 @@ const arrayStartReader = text('[');
 const arrayEndReader = text(']');
 
 export const enum Type {
-  OBJECT_START = 'OBJECT_START',
-  OBJECT_END = 'OBJECT_END',
-  ARRAY_START = 'ARRAY_START',
-  ARRAY_END = 'ARRAY_END',
-  STRING = 'STRING',
-  NUMBER = 'NUMBER',
-  BIGINT = 'BIGINT',
-  TRUE = 'TRUE',
-  FALSE = 'FALSE',
-  NULL = 'NULL',
-  COLON = 'COLON',
+  OBJECT_START,
+  OBJECT_END,
+  ARRAY_START,
+  ARRAY_END,
+  STRING,
+  NUMBER,
+  BIGINT,
+  TRUE,
+  FALSE,
+  NULL,
+  COLON,
 }
 
 export const enum Stage {
@@ -208,16 +208,16 @@ const whitespaceRule: Rule<Type, Stage, ParserContext> = {
 
 export const jsonTokenizer = createTokenizer([
   whitespaceRule,
-  objectStartRule,
-  objectEndRule,
-  arrayStartRule,
-  arrayEndRule,
+  commaRule,
   stringRule,
-  numberRule,
-  bigintRule,
   trueRule,
   falseRule,
   nullRule,
   colonRule,
-  commaRule,
+  numberRule,
+  bigintRule,
+  objectStartRule,
+  objectEndRule,
+  arrayStartRule,
+  arrayEndRule,
 ], Stage.VALUE_START);
