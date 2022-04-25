@@ -1,97 +1,145 @@
 const {parse, stringify} = require('../../lib/index-cjs');
 const jsonBigint = require('json-bigint');
 
-const largeJsonInput = JSON.stringify(require('../../package-lock.json'), null, 2);
-const smallJsonInput = JSON.stringify(require('../../package.json'), null, 2);
-const objectInput = require('./test.json');
-const jsonInput = JSON.stringify(objectInput);
-//
-// describe('Parse large input', () => {
-//
-//   test('JSON', (measure) => {
-//     measure(() => JSON.parse(largeJsonInput));
-//   });
-//
-//   test('lib', (measure) => {
-//     measure(() => parse(largeJsonInput));
-//   });
-//
-//   test('json-bigint', (measure) => {
-//     measure(() => jsonBigint.parse(largeJsonInput));
-//   });
-// }, {targetRme: 0.001});
-//
-// describe('Parse small input', () => {
-//
-//   test('JSON', (measure) => {
-//     measure(() => JSON.parse(smallJsonInput));
-//   });
-//
-//   test('lib', (measure) => {
-//     measure(() => parse(smallJsonInput));
-//   });
-//
-//   test('json-bigint', (measure) => {
-//     measure(() => jsonBigint.parse(smallJsonInput));
-//   });
-// }, {targetRme: 0.001});
-//
-// describe('Parse', () => {
-//
-//   test('JSON', (measure) => {
-//     measure(() => JSON.parse(jsonInput));
-//   });
-//
-//   test('lib', (measure) => {
-//     measure(() => parse(jsonInput));
-//   });
-//
-//   test('json-bigint', (measure) => {
-//     measure(() => jsonBigint.parse(jsonInput));
-//   });
-// }, {targetRme: 0.001});
-//
-// describe('Parse string', () => {
-//
-//   test('JSON', (measure) => {
-//     measure(() => JSON.parse('"aaaaaa"'));
-//   });
-//
-//   test('lib', (measure) => {
-//     measure(() => parse('"aaaaaa"'));
-//   });
-//
-//   test('json-bigint', (measure) => {
-//     measure(() => jsonBigint.parse('"aaaaaa"'));
-//   });
-// }, {targetRme: 0.001});
+const packageLockJson = require('../../package-lock.json');
+const packageJson = require('../../package.json');
 
-describe('Parse small object', () => {
+const packageLockStr = JSON.stringify(packageLockJson);
+const packageStr = JSON.stringify(packageJson);
 
-  test('JSON', (measure) => {
-    measure(() => JSON.parse('{"foo":"bar"}'));
+describe('Parse', () => {
+
+  describe('package-lock.json', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.parse(packageLockStr));
+    });
+
+    test('lib', (measure) => {
+      measure(() => parse(packageLockStr));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.parse(packageLockStr));
+    });
   });
 
-  test('lib', (measure) => {
-    measure(() => parse('{"foo":"bar"}'));
+
+  describe('package.json', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.parse(packageStr));
+    });
+
+    test('lib', (measure) => {
+      measure(() => parse(packageStr));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.parse(packageStr));
+    });
   });
 
-  test('json-bigint', (measure) => {
-    measure(() => jsonBigint.parse('{"foo":"bar"}'));
+
+  describe('"aaaaaa"', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.parse('"aaaaaa"'));
+    });
+
+    test('lib', (measure) => {
+      measure(() => parse('"aaaaaa"'));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.parse('"aaaaaa"'));
+    });
   });
+
+
+  describe('{"foo":"bar"}', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.parse('{"foo":"bar"}'));
+    });
+
+    test('lib', (measure) => {
+      measure(() => parse('{"foo":"bar"}'));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.parse('{"foo":"bar"}'));
+    });
+  });
+
 }, {targetRme: 0.001});
+
 
 describe('Stringify', () => {
 
-  test('JSON', (measure) => {
-    measure(() => JSON.stringify(objectInput));
+  describe('package-lock.json', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.stringify(packageLockJson));
+    });
+
+    test('lib', (measure) => {
+      measure(() => stringify(packageLockJson));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.stringify(packageLockJson));
+    });
   });
 
-  test('lib', (measure) => {
-    measure(() => stringify(objectInput));
+
+  describe('package.json', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.stringify(packageJson));
+    });
+
+    test('lib', (measure) => {
+      measure(() => stringify(packageJson));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.stringify(packageJson));
+    });
   });
 
-  test('json-bigint', (measure) => {
-    measure(() => jsonBigint.stringify(objectInput));
+
+  describe('"aaaaaa"', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.stringify('aaaaaa'));
+    });
+
+    test('lib', (measure) => {
+      measure(() => stringify('aaaaaa'));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.stringify('aaaaaa'));
+    });
   });
+
+
+  describe('{"foo":"bar"}', () => {
+
+    const value = {'foo': 'bar'};
+
+    test('JSON', (measure) => {
+      measure(() => JSON.stringify(value));
+    });
+
+    test('lib', (measure) => {
+      measure(() => stringify(value));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.stringify(value));
+    });
+  });
+
 }, {targetRme: 0.001});
