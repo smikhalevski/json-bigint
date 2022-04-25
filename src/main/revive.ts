@@ -1,6 +1,4 @@
-import {Reviver} from './types';
-
-export function revive(parent: any, key: string, reviver: Reviver): any {
+export function revive(parent: any, key: string, reviver: (this: any, key: string, value: any) => any): any {
   const obj = parent[key];
 
   if (obj !== null && typeof obj === 'object') {

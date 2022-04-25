@@ -1,12 +1,26 @@
 import {TokenHandler} from 'tokenizer-dsl';
 import {decodeString} from './decodeString';
-import {jsonTokenizer, Type} from './jsonTokenizer';
+import {jsonTokenizer, TokenType} from './jsonTokenizer';
 import {ParserContext} from './parser-types';
 import {revive} from './revive';
-import {Reviver} from './types';
 import {die} from './utils';
 
-function put(value: any, context: ParserContext): void {
+export function parseJson(input: string, reviver?: (this: any, key: string, value: any) => any, parseBigInt: (str: string) => any = BigInt): any {
+  const parent = {'': null};
+
+  jsonTokenizer(input, jsonTokenHandler, {
+    stack: [parent],
+    cursor: 0,
+    arrayMode: false,
+    objectKey: '',
+    input,
+    parseBigInt,
+  });
+
+  return reviver ? revive(parent, '', reviver) : parent[''];
+}
+
+function putValue(value: any, offset: number, context: ParserContext): void {
   const {stack, cursor} = context;
   const parent = stack[cursor];
 
@@ -18,7 +32,7 @@ function put(value: any, context: ParserContext): void {
   const {objectKey} = context;
 
   if (objectKey === null) {
-    die('Object key expected');
+    die('Object key expected', offset);
   }
   if (objectKey === '__proto__' || objectKey === 'constructor') {
     Object.defineProperty(parent, objectKey, {
@@ -34,92 +48,79 @@ function put(value: any, context: ParserContext): void {
   context.objectKey = null;
 }
 
-const jsonTokenHandler: TokenHandler<Type, ParserContext> = {
+const jsonTokenHandler: TokenHandler<TokenType, ParserContext> = {
 
   token(type, offset, length, context) {
     let value: any;
 
     switch (type) {
 
-      case Type.OBJECT_START:
+      case TokenType.OBJECT_START:
         value = {};
-        put(value, context);
+        putValue(value, offset, context);
         context.stack[++context.cursor] = value;
         context.arrayMode = false;
         break;
 
-      case Type.OBJECT_END:
+      case TokenType.OBJECT_END:
         if (context.arrayMode) {
-          die('Unexpected object end');
+          die('Unexpected end of object', offset);
         }
         context.arrayMode = context.stack[--context.cursor] instanceof Array;
         break;
 
-      case Type.ARRAY_START:
+      case TokenType.ARRAY_START:
         value = [];
-        put(value, context);
+        putValue(value, offset, context);
         context.stack[++context.cursor] = value;
         context.arrayMode = true;
         break;
 
-      case Type.ARRAY_END:
+      case TokenType.ARRAY_END:
         if (!context.arrayMode) {
-          die('Unexpected array end');
+          die('Unexpected end of array', offset);
         }
         context.arrayMode = context.stack[--context.cursor] instanceof Array;
         break;
 
-      case Type.STRING:
-        value = decodeString(context.input.substr(offset + 1, length - 2));
+      case TokenType.STRING:
+        value = decodeString(context.input.substr(offset + 1, length - 2), offset + 1);
 
         if (!context.arrayMode && context.objectKey === null) {
           context.objectKey = value;
           break;
         }
-        put(value, context);
+        putValue(value, offset, context);
         break;
 
-      case Type.COLON:
+        // case TokenType.COLON:
+        //   break;
+
+      case TokenType.COMMA:
+        if (context.cursor === 0) {
+          die('Unexpected token', offset);
+        }
         break;
 
-      case Type.NUMBER:
-        put(parseFloat(context.input.substr(offset, length)), context);
+      case TokenType.NUMBER:
+        putValue(parseFloat(context.input.substr(offset, length)), offset, context);
         break;
-      case Type.BIGINT:
-        put(context.parseBigInt(context.input.substr(offset, length)), context);
+      case TokenType.BIGINT:
+        putValue(context.parseBigInt(context.input.substr(offset, length)), offset, context);
         break;
-      case Type.TRUE:
-        put(true, context);
+      case TokenType.TRUE:
+        putValue(true, offset, context);
         break;
-      case Type.FALSE:
-        put(false, context);
+      case TokenType.FALSE:
+        putValue(false, offset, context);
         break;
-      case Type.NULL:
-        put(null, context);
+      case TokenType.NULL:
+        putValue(null, offset, context);
         break;
     }
   },
 
-  unrecognizedToken(offset, context) {
-    die('Unexpected char at ' + offset);
-  },
-
-  error(type, offset, errorCode, context) {
-    die('Error ' + errorCode + ' occurred at ' + offset);
+  unrecognizedToken(offset) {
+    die('Unexpected token', offset);
   },
 };
-
-export function parseJson(input: string, reviver?: Reviver, parseBigInt: (str: string) => unknown = BigInt): any {
-  const parent = {'': null};
-
-  jsonTokenizer(input, jsonTokenHandler, {
-    stack: [parent],
-    cursor: 0,
-    arrayMode: false,
-    objectKey: '',
-    input,
-    parseBigInt,
-  });
-
-  return reviver ? revive(parent, '', reviver) : parent[''];
-}

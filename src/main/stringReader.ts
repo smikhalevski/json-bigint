@@ -1,39 +1,41 @@
 import {NO_MATCH, ReaderFunction} from 'tokenizer-dsl';
-import {ParserContext} from './parser-types';
 import {die} from './utils';
 
-export const stringReader: ReaderFunction<ParserContext> = (input, offset, context) => {
+/**
+ * Reads the JSON-serialized string from the input.
+ */
+export const stringReader: ReaderFunction<unknown> = (input, offset) => {
 
-  if (input.charCodeAt(offset) !== 34 /* " */) {
+  if (input.charCodeAt(offset) !== 34 /*"*/) {
     return NO_MATCH;
   }
-  offset++;
 
-  let endOffset = input.indexOf('"', offset);
+  let endIndex = input.indexOf('"', offset + 1);
 
-  if (endOffset === -1) {
-    die('Unterminated string');
+  if (endIndex === -1) {
+    die('Unterminated string', offset);
   }
 
   while (true) {
     let i = 1;
 
-    while (i < endOffset - offset) {
-      if (input.charCodeAt(endOffset - i) !== 92 /* \ */) {
+    // Check if the quot char is escaped
+    while (i < endIndex - offset) {
+      if (input.charCodeAt(endIndex - i) !== 92 /*\*/) {
         break;
       }
       ++i;
     }
     if (i % 2 === 0) {
-      endOffset = input.indexOf('"', endOffset + 1);
+      endIndex = input.indexOf('"', endIndex + 1);
 
-      if (endOffset === -1) {
-        die('Unterminated string');
+      if (endIndex === -1) {
+        die('Unterminated string', offset);
       }
       continue;
     }
     break;
   }
 
-  return endOffset + 1;
+  return endIndex + 1;
 };

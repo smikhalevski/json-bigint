@@ -1,4 +1,4 @@
-import {encodeJsonString} from './encodeJsonString';
+import {encodeString} from './encodeString';
 import {IJsonStringifierOptions, JsonStringifier, Replacer} from './types';
 
 const LINE_FEED = '\n';
@@ -24,7 +24,7 @@ export function createJsonStringifier(options: IJsonStringifierOptions): JsonStr
     const valueType = typeof value;
 
     if (valueType === 'string') {
-      return encodeJsonString(value);
+      return encodeString(value);
     }
 
     if (valueType === 'number') {
@@ -109,7 +109,7 @@ export function createJsonStringifier(options: IJsonStringifierOptions): JsonStr
           } else {
             separated = true;
           }
-          json += innerPadding + encodeJsonString(key) + ':' + childJson;
+          json += innerPadding + encodeString(key) + ':' + childJson;
         }
       }
       if (padded && separated) {

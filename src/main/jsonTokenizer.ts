@@ -2,9 +2,9 @@ import {all, char, createTokenizer, maybe, or, Rule, seq, text} from 'tokenizer-
 import {ParserContext} from './parser-types';
 import {stringReader} from './stringReader';
 
-const zeroOrManyDigitsReader = all(char([['0'.charCodeAt(0), '9'.charCodeAt(0)]]));
+const zeroOrManyDigitsReader = all(char([['0', '9']]));
 
-const oneOrManyDigitsReader = all(char([['0'.charCodeAt(0), '9'.charCodeAt(0)]]), {minimumCount: 1});
+const oneOrManyDigitsReader = all(char([['0', '9']]), {minimumCount: 1});
 
 // 0 or -123 or 123
 const integerReader = seq(
@@ -12,7 +12,7 @@ const integerReader = seq(
     or(
         text('0'),
         seq(
-            char([['1'.charCodeAt(0), '9'.charCodeAt(0)]]),
+            char([['1', '9']]),
             zeroOrManyDigitsReader,
         ),
     ),
@@ -61,7 +61,7 @@ const arrayStartReader = text('[');
 
 const arrayEndReader = text(']');
 
-export const enum Type {
+export const enum TokenType {
   OBJECT_START,
   OBJECT_END,
   ARRAY_START,
@@ -73,99 +73,100 @@ export const enum Type {
   FALSE,
   NULL,
   COLON,
+  COMMA,
 }
 
-export const enum Stage {
+const enum LexerStage {
   VALUE_START,
   VALUE_END,
   STRING_VALUE_END,
   OBJECT_KEY,
 }
 
-const objectStartRule: Rule<Type, Stage, ParserContext> = {
-  on: [Stage.VALUE_START],
-  type: Type.OBJECT_START,
+const objectStartRule: Rule<TokenType, LexerStage, ParserContext> = {
+  on: [LexerStage.VALUE_START],
+  type: TokenType.OBJECT_START,
   reader: objectStartReader,
-  to: Stage.OBJECT_KEY,
+  to: LexerStage.OBJECT_KEY,
 };
 
-const objectEndRule: Rule<Type, Stage, ParserContext> = {
-  on: [Stage.OBJECT_KEY, Stage.STRING_VALUE_END, Stage.VALUE_END],
-  type: Type.OBJECT_END,
+const objectEndRule: Rule<TokenType, LexerStage, ParserContext> = {
+  on: [LexerStage.OBJECT_KEY, LexerStage.STRING_VALUE_END, LexerStage.VALUE_END],
+  type: TokenType.OBJECT_END,
   reader: objectEndReader,
-  to: Stage.VALUE_END,
+  to: LexerStage.VALUE_END,
 };
 
-const arrayStartRule: Rule<Type, Stage, ParserContext> = {
-  on: [Stage.VALUE_START],
-  type: Type.ARRAY_START,
+const arrayStartRule: Rule<TokenType, LexerStage, ParserContext> = {
+  on: [LexerStage.VALUE_START],
+  type: TokenType.ARRAY_START,
   reader: arrayStartReader,
 };
 
-const arrayEndRule: Rule<Type, Stage, ParserContext> = {
-  on: [Stage.VALUE_START, Stage.STRING_VALUE_END, Stage.VALUE_END],
-  type: Type.ARRAY_END,
+const arrayEndRule: Rule<TokenType, LexerStage, ParserContext> = {
+  on: [LexerStage.VALUE_START, LexerStage.STRING_VALUE_END, LexerStage.VALUE_END],
+  type: TokenType.ARRAY_END,
   reader: arrayEndReader,
-  to: Stage.VALUE_END,
+  to: LexerStage.VALUE_END,
 };
 
-const stringRule: Rule<Type, Stage, ParserContext> = {
-  on: [Stage.VALUE_START, Stage.OBJECT_KEY],
-  type: Type.STRING,
+const stringRule: Rule<TokenType, LexerStage, ParserContext> = {
+  on: [LexerStage.VALUE_START, LexerStage.OBJECT_KEY],
+  type: TokenType.STRING,
   reader: stringReader,
-  to: Stage.STRING_VALUE_END,
+  to: LexerStage.STRING_VALUE_END,
 };
 
-const numberRule: Rule<Type, Stage, ParserContext> = {
-  on: [Stage.VALUE_START],
-  type: Type.NUMBER,
+const numberRule: Rule<TokenType, LexerStage, ParserContext> = {
+  on: [LexerStage.VALUE_START],
+  type: TokenType.NUMBER,
   reader: numberReader,
-  to: Stage.VALUE_END,
+  to: LexerStage.VALUE_END,
 };
 
-const bigintRule: Rule<Type, Stage, ParserContext> = {
-  on: [Stage.VALUE_START],
-  type: Type.BIGINT,
+const bigintRule: Rule<TokenType, LexerStage, ParserContext> = {
+  on: [LexerStage.VALUE_START],
+  type: TokenType.BIGINT,
   reader: bigintReader,
-  to: Stage.VALUE_END,
+  to: LexerStage.VALUE_END,
 };
 
-const trueRule: Rule<Type, Stage, ParserContext> = {
-  on: [Stage.VALUE_START],
-  type: Type.TRUE,
+const trueRule: Rule<TokenType, LexerStage, ParserContext> = {
+  on: [LexerStage.VALUE_START],
+  type: TokenType.TRUE,
   reader: trueReader,
-  to: Stage.VALUE_END,
+  to: LexerStage.VALUE_END,
 };
 
-const falseRule: Rule<Type, Stage, ParserContext> = {
-  on: [Stage.VALUE_START],
-  type: Type.FALSE,
+const falseRule: Rule<TokenType, LexerStage, ParserContext> = {
+  on: [LexerStage.VALUE_START],
+  type: TokenType.FALSE,
   reader: falseReader,
-  to: Stage.VALUE_END,
+  to: LexerStage.VALUE_END,
 };
 
-const nullRule: Rule<Type, Stage, ParserContext> = {
-  on: [Stage.VALUE_START],
-  type: Type.NULL,
+const nullRule: Rule<TokenType, LexerStage, ParserContext> = {
+  on: [LexerStage.VALUE_START],
+  type: TokenType.NULL,
   reader: nullReader,
-  to: Stage.VALUE_END,
+  to: LexerStage.VALUE_END,
 };
 
-const colonRule: Rule<Type, Stage, ParserContext> = {
-  on: [Stage.STRING_VALUE_END],
-  type: Type.COLON,
+const colonRule: Rule<TokenType, LexerStage, ParserContext> = {
+  on: [LexerStage.STRING_VALUE_END],
+  type: TokenType.COLON,
   reader: colonReader,
-  to: Stage.VALUE_START,
+  to: LexerStage.VALUE_START,
 };
 
-const commaRule: Rule<Type, Stage, ParserContext> = {
-  silent: true,
-  on: [Stage.STRING_VALUE_END, Stage.VALUE_END],
+const commaRule: Rule<TokenType, LexerStage, ParserContext> = {
+  on: [LexerStage.STRING_VALUE_END, LexerStage.VALUE_END],
+  type: TokenType.COMMA,
   reader: commaReader,
-  to: Stage.VALUE_START,
+  to: LexerStage.VALUE_START,
 };
 
-const whitespaceRule: Rule<Type, Stage, ParserContext> = {
+const whitespaceRule: Rule<TokenType, LexerStage, ParserContext> = {
   silent: true,
   reader: whitespaceReader,
 };
@@ -184,4 +185,4 @@ export const jsonTokenizer = createTokenizer([
   objectEndRule,
   arrayStartRule,
   arrayEndRule,
-], Stage.VALUE_START);
+], LexerStage.VALUE_START);

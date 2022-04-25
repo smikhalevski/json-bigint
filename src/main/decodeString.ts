@@ -1,79 +1,80 @@
-import {CharCode} from './CharCode';
 import {die} from './utils';
 
-export function decodeString(input: string): string {
-  let takenStr = '';
-  let offset = 0;
+/**
+ * Decodes a JSON-encoded string.
+ */
+export function decodeString(input: string, offset: number): string {
+  let str = '';
+  let index = 0;
 
-  let escapeOffset = input.indexOf('\\');
+  let escapeIndex = input.indexOf('\\');
 
-  if (escapeOffset === -1) {
+  if (escapeIndex === -1) {
     return input;
   }
 
   do {
+    const strChunk = input.substring(index, escapeIndex);
 
-    const chunkStr = input.substring(offset, escapeOffset);
+    switch (input.charCodeAt(escapeIndex + 1)) {
 
-    switch (input.charCodeAt(escapeOffset + 1)) {
-
-      case CharCode['"']:
-        takenStr += chunkStr + '"';
-        offset = escapeOffset + 2;
+      case 34:
+        str += strChunk + '"';
+        index = escapeIndex + 2;
         break;
 
-      case CharCode['\\']:
-        takenStr += chunkStr + '\\';
-        offset = escapeOffset + 2;
+      case 92:
+        str += strChunk + '\\';
+        index = escapeIndex + 2;
         break;
 
-      case CharCode['/']:
-        takenStr += chunkStr + '/';
-        offset = escapeOffset + 2;
+      case 47:
+        str += strChunk + '/';
+        index = escapeIndex + 2;
         break;
 
-      case CharCode['b']:
-        takenStr += chunkStr + '\b';
-        offset = escapeOffset + 2;
+      case 98:
+        str += strChunk + '\b';
+        index = escapeIndex + 2;
         break;
 
-      case CharCode['t']:
-        takenStr += chunkStr + '\t';
-        offset = escapeOffset + 2;
+      case 116:
+        str += strChunk + '\t';
+        index = escapeIndex + 2;
         break;
 
-      case CharCode['n']:
-        takenStr += chunkStr + '\n';
-        offset = escapeOffset + 2;
+      case 110:
+        str += strChunk + '\n';
+        index = escapeIndex + 2;
         break;
 
-      case CharCode['f']:
-        takenStr += chunkStr + '\f';
-        offset = escapeOffset + 2;
+      case 102:
+        str += strChunk + '\f';
+        index = escapeIndex + 2;
         break;
 
-      case CharCode['r']:
-        takenStr += chunkStr + '\r';
-        offset = escapeOffset + 2;
+      case 114:
+        str += strChunk + '\r';
+        index = escapeIndex + 2;
         break;
 
-      case CharCode['u']:
-        const charCode = parseInt(input.substr(escapeOffset + 2, 4), 16);
+      case 117:
+        const charCode = parseInt(input.substr(escapeIndex + 2, 4), 16);
 
         if (isNaN(charCode)) {
-          die('Invalid UTF code');
+          die('Invalid UTF code', offset + escapeIndex);
         }
-        takenStr += chunkStr + String.fromCharCode(charCode);
-        offset = escapeOffset + 6;
+        str += strChunk + String.fromCharCode(charCode);
+        index = escapeIndex + 6;
         break;
 
       default:
-        die('Illegal escape char');
+        die('Illegal escape token', offset + escapeIndex);
     }
 
-    escapeOffset = input.indexOf('\\', offset);
+    escapeIndex = input.indexOf('\\', index);
 
-  } while (escapeOffset !== -1);
+  } while (escapeIndex !== -1);
 
-  return takenStr + input.substring(offset);
+  return str + input.substring(index);
 }

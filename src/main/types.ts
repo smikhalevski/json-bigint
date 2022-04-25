@@ -15,8 +15,6 @@ export interface IJsonStringifierOptions {
   stringifyBigInt(value: any): string;
 }
 
-export type Reviver = (this: any, key: string, value: any) => any;
-
 export type Replacer = (this: any, key: string, value: any) => any;
 
 export type JsonStringifier = (value: any, replacer?: Replacer | Array<unknown> | null, space?: string | number | null) => string;

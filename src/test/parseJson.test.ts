@@ -76,17 +76,25 @@ describe('parseJson', () => {
     expect(parseJson('[{"foo":"abc"}]')).toEqual([{foo: 'abc'}]);
   });
 
+  test('parses huge input', () => {
+    const json = fs.readFileSync(path.join(__dirname, '../../package.json'), 'utf8');
+
+    expect(parseJson(json, undefined, parseInt)).toEqual(JSON.parse(json));
+  });
+
   test('throws on object after string', () => {
-    expect(() => parseJson('"aaa"{}')).toThrow();
+    expect(() => parseJson('"aaa"{}')).toThrow('Unexpected token at position 5');
   });
 
   test('throws on string after object', () => {
-    expect(() => parseJson('{}"aaa"')).toThrow();
+    expect(() => parseJson('{}"aaa"')).toThrow('Unexpected token at position 2');
   });
 
-  test('parses huge input', () => {
-    const json = fs.readFileSync(path.join(__dirname, './test.json'), 'utf8');
+  test('throws on comma after payload end', () => {
+    expect(() => parseJson('{},')).toThrow('Unexpected token at position 2');
+  });
 
-    expect(parseJson(json, undefined, parseInt)).toEqual(JSON.parse(json));
+  test('throws on absent object key', () => {
+    expect(() => parseJson('{"aaa":111,222}')).toThrow('Object key expected at position 11');
   });
 });
