@@ -3,6 +3,5 @@ export interface ParserContext {
   cursor: number;
   arrayMode: boolean;
   objectKey: string | null;
-  input: string;
   parseBigInt: (str: string) => unknown;
 }

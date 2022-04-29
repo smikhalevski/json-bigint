@@ -13,7 +13,6 @@ export function parseJson(input: string, reviver?: (this: any, key: string, valu
     cursor: 0,
     arrayMode: false,
     objectKey: '',
-    input,
     parseBigInt,
   });
 
@@ -50,7 +49,7 @@ function putValue(value: any, offset: number, context: ParserContext): void {
 
 const jsonTokenHandler: TokenHandler<TokenType, ParserContext> = {
 
-  token(type, offset, length, context) {
+  token(type, chunk, offset, length, context) {
     let value: any;
 
     switch (type) {
@@ -84,7 +83,7 @@ const jsonTokenHandler: TokenHandler<TokenType, ParserContext> = {
         break;
 
       case TokenType.STRING:
-        value = decodeString(context.input.substr(offset + 1, length - 2), offset + 1);
+        value = decodeString(chunk.substr(offset + 1, length - 2), offset + 1);
 
         if (!context.arrayMode && context.objectKey === null) {
           context.objectKey = value;
@@ -103,10 +102,10 @@ const jsonTokenHandler: TokenHandler<TokenType, ParserContext> = {
         break;
 
       case TokenType.NUMBER:
-        putValue(parseFloat(context.input.substr(offset, length)), offset, context);
+        putValue(parseFloat(chunk.substr(offset, length)), offset, context);
         break;
       case TokenType.BIGINT:
-        putValue(context.parseBigInt(context.input.substr(offset, length)), offset, context);
+        putValue(context.parseBigInt(chunk.substr(offset, length)), offset, context);
         break;
       case TokenType.TRUE:
         putValue(true, offset, context);
@@ -120,7 +119,7 @@ const jsonTokenHandler: TokenHandler<TokenType, ParserContext> = {
     }
   },
 
-  unrecognizedToken(offset) {
+  unrecognizedToken(chunk, offset) {
     die('Unexpected token', offset);
   },
 };

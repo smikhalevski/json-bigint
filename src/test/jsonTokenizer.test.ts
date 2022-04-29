@@ -10,20 +10,24 @@ describe('jsonTokenizer', () => {
   const errorCallbackMock = jest.fn();
   const unrecognizedTokenCallbackMock = jest.fn();
 
-  const context: ParserContext = {} as any;
+  const context: ParserContext = Symbol('context') as any;
 
-  let handler: TokenHandler<TokenType, ParserContext>;
+  const handler: TokenHandler<TokenType, ParserContext> = {
+    token(type, chunk, offset, length, context) {
+      tokenCallbackMock(type, offset, length, context);
+    },
+    error(type, chunk, offset, errorCode, context) {
+      errorCallbackMock(type, offset, errorCode, context);
+    },
+    unrecognizedToken(offset, context) {
+      unrecognizedTokenCallbackMock(offset, context);
+    }
+  };
 
   beforeEach(() => {
     tokenCallbackMock.mockReset();
     errorCallbackMock.mockReset();
     unrecognizedTokenCallbackMock.mockReset();
-
-    handler = {
-      token: tokenCallbackMock,
-      error: errorCallbackMock,
-      unrecognizedToken: unrecognizedTokenCallbackMock,
-    };
   });
 
   test('tokenizes objects', () => {
