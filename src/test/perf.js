@@ -7,6 +7,8 @@ const packageJson = require('../../package.json');
 const packageLockStr = JSON.stringify(packageLockJson);
 const packageStr = JSON.stringify(packageJson);
 
+const nextVersion = 'v' + packageJson.version;
+
 describe('Parse', () => {
 
   describe('package-lock.json', () => {
@@ -15,7 +17,7 @@ describe('Parse', () => {
       measure(() => JSON.parse(packageLockStr));
     });
 
-    test('lib', (measure) => {
+    test(nextVersion, (measure) => {
       measure(() => parse(packageLockStr));
     });
 
@@ -30,7 +32,7 @@ describe('Parse', () => {
       measure(() => JSON.parse(packageStr));
     });
 
-    test('lib', (measure) => {
+    test(nextVersion, (measure) => {
       measure(() => parse(packageStr));
     });
 
@@ -45,7 +47,7 @@ describe('Parse', () => {
       measure(() => JSON.parse('"aaaaaa"'));
     });
 
-    test('lib', (measure) => {
+    test(nextVersion, (measure) => {
       measure(() => parse('"aaaaaa"'));
     });
 
@@ -60,7 +62,7 @@ describe('Parse', () => {
       measure(() => JSON.parse('"aaa\\nbbb\\nccc"'));
     });
 
-    test('lib', (measure) => {
+    test(nextVersion, (measure) => {
       measure(() => parse('"aaa\\nbbb\\nccc"'));
     });
 
@@ -75,7 +77,7 @@ describe('Parse', () => {
       measure(() => JSON.parse('{"foo":"bar"}'));
     });
 
-    test('lib', (measure) => {
+    test(nextVersion, (measure) => {
       measure(() => parse('{"foo":"bar"}'));
     });
 
@@ -84,33 +86,33 @@ describe('Parse', () => {
     });
   });
 
-  describe('{"foo": 123.456}', () => {
+  describe('{"foo":123.456}', () => {
 
     test('JSON', (measure) => {
-      measure(() => JSON.parse('{"foo": 123.456}'));
+      measure(() => JSON.parse('{"foo":123.456}'));
     });
 
-    test('lib', (measure) => {
-      measure(() => parse('{"foo": 123.456}'));
+    test(nextVersion, (measure) => {
+      measure(() => parse('{"foo":123.456}'));
     });
 
     test('json-bigint', (measure) => {
-      measure(() => jsonBigint.parse('{"foo": 123.456}'));
+      measure(() => jsonBigint.parse('{"foo":123.456}'));
     });
   });
 
-  describe('{"foo": 123456}', () => {
+  describe('{"foo":123456}', () => {
 
     test('JSON', (measure) => {
-      measure(() => JSON.parse('{"foo": 123456}'));
+      measure(() => JSON.parse('{"foo":123456}'));
     });
 
-    test('lib', (measure) => {
-      measure(() => parse('{"foo": 123456}'));
+    test(nextVersion, (measure) => {
+      measure(() => parse('{"foo":123456}'));
     });
 
     test('json-bigint', (measure) => {
-      measure(() => jsonBigint.parse('{"foo": 123456}'));
+      measure(() => jsonBigint.parse('{"foo":123456}'));
     });
   });
 
@@ -125,7 +127,7 @@ describe('Stringify', () => {
       measure(() => JSON.stringify(packageLockJson));
     });
 
-    test('lib', (measure) => {
+    test(nextVersion, (measure) => {
       measure(() => stringify(packageLockJson));
     });
 
@@ -140,7 +142,7 @@ describe('Stringify', () => {
       measure(() => JSON.stringify(packageJson));
     });
 
-    test('lib', (measure) => {
+    test(nextVersion, (measure) => {
       measure(() => stringify(packageJson));
     });
 
@@ -155,7 +157,7 @@ describe('Stringify', () => {
       measure(() => JSON.stringify('aaaaaa'));
     });
 
-    test('lib', (measure) => {
+    test(nextVersion, (measure) => {
       measure(() => stringify('aaaaaa'));
     });
 
@@ -172,7 +174,7 @@ describe('Stringify', () => {
       measure(() => JSON.stringify(value));
     });
 
-    test('lib', (measure) => {
+    test(nextVersion, (measure) => {
       measure(() => stringify(value));
     });
 

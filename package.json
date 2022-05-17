@@ -1,7 +1,7 @@
 {
-  "name": "@smikhalevski/json-bigint",
+  "name": "json-otter",
   "version": "1.0.0",
-  "description": "The symmetrical and backwards compatible JSON serializer/parser with bigint support.",
+  "description": "The highly performant, symmetrical, backward compatible, and unambiguous JSON serializer/parser with BigInt support.",
   "main": "./lib/index-cjs.js",
   "module": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -22,7 +22,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/smikhalevski/json-bigint.git"
+    "url": "git+https://github.com/smikhalevski/json-otter.git"
   },
   "keywords": [
     "json",
@@ -31,9 +31,9 @@
   "author": "Savva Mikhalevski <smikhalevski@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/smikhalevski/json-bigint/issues"
+    "url": "https://github.com/smikhalevski/json-otter/issues"
   },
-  "homepage": "https://github.com/smikhalevski/json-bigint#readme",
+  "homepage": "https://github.com/smikhalevski/json-otter#readme",
   "jest": {
     "preset": "ts-jest",
     "globals": {
