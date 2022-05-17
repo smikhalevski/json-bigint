@@ -1,7 +1,7 @@
 {
-  "name": "@smikhalevski/json-bigint",
+  "name": "json-otter",
   "version": "1.0.0",
-  "description": "The symmetrical and backwards compatible JSON serializer/parser with bigint support.",
+  "description": "The highly performant, symmetrical, backward compatible, and unambiguous JSON serializer/parser with BigInt support.",
   "main": "./lib/index-cjs.js",
   "module": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -13,16 +13,16 @@
     "build": "tsc && npm run rollup && npm run terser",
     "rollup": "rollup --external tokenizer-dsl --input ./lib/index.js --file ./lib/index-cjs.js --format cjs --plugin @rollup/plugin-node-resolve",
     "terser": "terser --compress --mangle toplevel --output ./lib/index-cjs.js -- ./lib/index-cjs.js",
-    "clean": "rm -rf ./lib",
+    "clean": "rimraf ./lib",
     "test": "jest --detectOpenHandles",
-    "perf": "[ -d ./lib ] || npm run build && node --expose-gc --max-old-space-size=4096 ./src/test/perf.js",
+    "perf": "[ -d ./lib ] || npm run build && toofast ./src/test/perf.js",
     "docs": "typedoc ./src/main/index.ts",
     "publish-docs": "[ -d ./docs ] && [[ ! $(git status --porcelain) ]] && branch=$(git rev-parse --abbrev-ref HEAD) && sha=$(git rev-parse --short HEAD) && t=$(mktemp -d) && cp -R ./docs/ $t && git checkout ghpages && ls -A | grep -wv .git | xargs rm -rf && cp -R $t/ . && git add . && git commit -m \"Updated docs ($sha)\" && git push && git checkout $branch",
     "release-docs": "npm run clean && npm run docs && npm run publish-docs"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/smikhalevski/json-bigint.git"
+    "url": "git+https://github.com/smikhalevski/json-otter.git"
   },
   "keywords": [
     "json",
@@ -31,9 +31,9 @@
   "author": "Savva Mikhalevski <smikhalevski@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/smikhalevski/json-bigint/issues"
+    "url": "https://github.com/smikhalevski/json-otter/issues"
   },
-  "homepage": "https://github.com/smikhalevski/json-bigint#readme",
+  "homepage": "https://github.com/smikhalevski/json-otter#readme",
   "jest": {
     "preset": "ts-jest",
     "globals": {
@@ -47,19 +47,19 @@
     }
   },
   "devDependencies": {
-    "@rollup/plugin-node-resolve": "^13.0.0",
-    "@smikhalevski/perf-test": "^1.0.0",
-    "@types/jest": "^27.0.2",
-    "chalk": "^4.1.2",
-    "jest": "^27.0.2",
+    "@rollup/plugin-node-resolve": "^13.1.3",
+    "@types/jest": "^27.4.1",
+    "jest": "^27.5.1",
     "json-bigint": "^1.0.0",
-    "rollup": "^2.50.5",
-    "terser": "^5.7.0",
-    "ts-jest": "^27.0.2",
-    "typedoc": "^0.22.7",
-    "typescript": "^4.3.2"
+    "rimraf": "^3.0.2",
+    "rollup": "^2.70.1",
+    "terser": "^5.12.1",
+    "toofast": "^1.2.0",
+    "ts-jest": "^27.1.3",
+    "typedoc": "^0.22.13",
+    "typescript": "^4.6.2"
   },
   "dependencies": {
-    "tokenizer-dsl": "^2.0.0-next.0"
+    "tokenizer-dsl": "^4.0.0"
   }
 }

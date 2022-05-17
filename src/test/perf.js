@@ -1,45 +1,186 @@
-const {test} = require('@smikhalevski/perf-test');
-const {parse, stringify, tokenizeJson} = require('../../lib/index-cjs');
-const JsonBigInt = require('json-bigint');
-const chalk = require('chalk');
+const {parse, stringify} = require('../../lib/index-cjs');
+const jsonBigint = require('json-bigint');
 
-const objectInput = require('./test.json');
-const jsonInput = JSON.stringify(objectInput);
+const packageLockJson = require('../../package-lock.json');
+const packageJson = require('../../package.json');
 
-const tokenizerOptions = {
-  objectStart: () => undefined,
-  objectEnd: () => undefined,
-  arrayStart: () => undefined,
-  arrayEnd: () => undefined,
-  string: () => undefined,
-  number: () => undefined,
-  bigInt: () => undefined,
-  true: () => undefined,
-  false: () => undefined,
-  null: () => undefined,
-  colon: () => undefined,
-  comma: () => undefined,
-};
+const packageLockStr = JSON.stringify(packageLockJson);
+const packageStr = JSON.stringify(packageJson);
 
-console.log(chalk.inverse(' Tokenize ') + '\n');
+const nextVersion = 'v' + packageJson.version;
 
-gc();
-test('lib ', () => tokenizeJson(jsonInput, tokenizerOptions), {timeout: 20_000, targetRme: .002});
+describe('Parse', () => {
 
-console.log('\n' + chalk.inverse(' Parse ') + '\n');
+  describe('package-lock.json', () => {
 
-gc();
-test('JSON        ', () => JSON.parse(jsonInput), {timeout: 20_000, targetRme: .002});
-gc();
-test('lib         ', () => parse(jsonInput), {timeout: 20_000, targetRme: .002});
-gc();
-test('json-bigint ', () => JsonBigInt.parse(jsonInput), {timeout: 20_000, targetRme: .002});
+    test('JSON', (measure) => {
+      measure(() => JSON.parse(packageLockStr));
+    });
 
-console.log('\n' + chalk.inverse(' Stringify ') + '\n');
+    test(nextVersion, (measure) => {
+      measure(() => parse(packageLockStr));
+    });
 
-gc();
-test('JSON        ', () => JSON.stringify(objectInput));
-gc();
-test('lib         ', () => stringify(objectInput));
-gc();
-test('json-bigint ', () => JsonBigInt.stringify(objectInput));
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.parse(packageLockStr));
+    });
+  });
+
+  describe('package.json', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.parse(packageStr));
+    });
+
+    test(nextVersion, (measure) => {
+      measure(() => parse(packageStr));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.parse(packageStr));
+    });
+  });
+
+  describe('"aaaaaa"', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.parse('"aaaaaa"'));
+    });
+
+    test(nextVersion, (measure) => {
+      measure(() => parse('"aaaaaa"'));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.parse('"aaaaaa"'));
+    });
+  });
+
+  describe('"aaa\\nbbb\\nccc"', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.parse('"aaa\\nbbb\\nccc"'));
+    });
+
+    test(nextVersion, (measure) => {
+      measure(() => parse('"aaa\\nbbb\\nccc"'));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.parse('"aaa\\nbbb\\nccc"'));
+    });
+  });
+
+  describe('{"foo":"bar"}', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.parse('{"foo":"bar"}'));
+    });
+
+    test(nextVersion, (measure) => {
+      measure(() => parse('{"foo":"bar"}'));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.parse('{"foo":"bar"}'));
+    });
+  });
+
+  describe('{"foo":123.456}', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.parse('{"foo":123.456}'));
+    });
+
+    test(nextVersion, (measure) => {
+      measure(() => parse('{"foo":123.456}'));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.parse('{"foo":123.456}'));
+    });
+  });
+
+  describe('{"foo":123456}', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.parse('{"foo":123456}'));
+    });
+
+    test(nextVersion, (measure) => {
+      measure(() => parse('{"foo":123456}'));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.parse('{"foo":123456}'));
+    });
+  });
+
+}, {targetRme: 0.001});
+
+
+describe('Stringify', () => {
+
+  describe('package-lock.json', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.stringify(packageLockJson));
+    });
+
+    test(nextVersion, (measure) => {
+      measure(() => stringify(packageLockJson));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.stringify(packageLockJson));
+    });
+  });
+
+  describe('package.json', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.stringify(packageJson));
+    });
+
+    test(nextVersion, (measure) => {
+      measure(() => stringify(packageJson));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.stringify(packageJson));
+    });
+  });
+
+  describe('"aaaaaa"', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.stringify('aaaaaa'));
+    });
+
+    test(nextVersion, (measure) => {
+      measure(() => stringify('aaaaaa'));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.stringify('aaaaaa'));
+    });
+  });
+
+  describe('{"foo":"bar"}', () => {
+
+    const value = {'foo': 'bar'};
+
+    test('JSON', (measure) => {
+      measure(() => JSON.stringify(value));
+    });
+
+    test(nextVersion, (measure) => {
+      measure(() => stringify(value));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.stringify(value));
+    });
+  });
+
+}, {targetRme: 0.001});

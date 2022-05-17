@@ -1,11 +1,7 @@
-import {createJsonParser, createJsonStringifier} from '../main';
+import {stringifyJson} from '../main/stringifyJson';
+import {parseJson} from '../main/parseJson';
 
-describe('createJsonStringifier', () => {
-
-  const stringifyJson = createJsonStringifier({
-    isBigInt: (value) => typeof value === 'bigint',
-    stringifyBigInt: String,
-  });
+describe('stringifyJson', () => {
 
   test('stringifies bigint', () => {
     expect(stringifyJson({foo: BigInt(123)})).toBe('{"foo":123}');
@@ -99,9 +95,6 @@ describe('createJsonStringifier', () => {
   });
 
   test('serialization is symmetrical', () => {
-    const parseJson = createJsonParser({
-      parseBigInt: BigInt,
-    });
     expect(parseJson(stringifyJson({foo: BigInt(123)}))).toEqual({foo: BigInt(123)});
     expect(parseJson(stringifyJson({foo: 123}))).toEqual({foo: 123});
   });

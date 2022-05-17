@@ -1,12 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import {createJsonParser} from '../main/createJsonParser';
+import {parseJson} from '../main/parseJson';
 
-describe('createJsonParser', () => {
-
-  const parseJson = createJsonParser({
-    parseBigInt: BigInt,
-  });
+describe('parseJson', () => {
 
   test('parses string', () => {
     expect(parseJson('"aaa"')).toBe('aaa');
@@ -81,14 +77,24 @@ describe('createJsonParser', () => {
   });
 
   test('parses huge input', () => {
-    parseJson(fs.readFileSync(path.join(__dirname, './test.json'), 'utf8'));
+    const json = fs.readFileSync(path.join(__dirname, '../../package.json'), 'utf8');
+
+    expect(parseJson(json, undefined, parseInt)).toEqual(JSON.parse(json));
   });
 
   test('throws on object after string', () => {
-    expect(() => parseJson('"aaa"{}')).toThrow(new SyntaxError('Unexpected token at 5'));
+    expect(() => parseJson('"aaa"{}')).toThrow('Unexpected token at position 5');
   });
 
   test('throws on string after object', () => {
-    expect(() => parseJson('{}"aaa"')).toThrow(new SyntaxError('Unexpected token at 2'));
+    expect(() => parseJson('{}"aaa"')).toThrow('Unexpected token at position 2');
+  });
+
+  test('throws on comma after payload end', () => {
+    expect(() => parseJson('{},')).toThrow('Unexpected token at position 2');
+  });
+
+  test('throws on absent object key', () => {
+    expect(() => parseJson('{"aaa":111,222}')).toThrow('Object key expected at position 11');
   });
 });
