@@ -24,7 +24,6 @@ describe('Parse', () => {
     });
   });
 
-
   describe('package.json', () => {
 
     test('JSON', (measure) => {
@@ -39,7 +38,6 @@ describe('Parse', () => {
       measure(() => jsonBigint.parse(packageStr));
     });
   });
-
 
   describe('"aaaaaa"', () => {
 
@@ -56,6 +54,20 @@ describe('Parse', () => {
     });
   });
 
+  describe('"aaa\\nbbb\\nccc"', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.parse('"aaa\\nbbb\\nccc"'));
+    });
+
+    test('lib', (measure) => {
+      measure(() => parse('"aaa\\nbbb\\nccc"'));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.parse('"aaa\\nbbb\\nccc"'));
+    });
+  });
 
   describe('{"foo":"bar"}', () => {
 
@@ -69,6 +81,36 @@ describe('Parse', () => {
 
     test('json-bigint', (measure) => {
       measure(() => jsonBigint.parse('{"foo":"bar"}'));
+    });
+  });
+
+  describe('{"foo": 123.456}', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.parse('{"foo": 123.456}'));
+    });
+
+    test('lib', (measure) => {
+      measure(() => parse('{"foo": 123.456}'));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.parse('{"foo": 123.456}'));
+    });
+  });
+
+  describe('{"foo": 123456}', () => {
+
+    test('JSON', (measure) => {
+      measure(() => JSON.parse('{"foo": 123456}'));
+    });
+
+    test('lib', (measure) => {
+      measure(() => parse('{"foo": 123456}'));
+    });
+
+    test('json-bigint', (measure) => {
+      measure(() => jsonBigint.parse('{"foo": 123456}'));
     });
   });
 
@@ -92,7 +134,6 @@ describe('Stringify', () => {
     });
   });
 
-
   describe('package.json', () => {
 
     test('JSON', (measure) => {
@@ -108,7 +149,6 @@ describe('Stringify', () => {
     });
   });
 
-
   describe('"aaaaaa"', () => {
 
     test('JSON', (measure) => {
@@ -123,7 +163,6 @@ describe('Stringify', () => {
       measure(() => jsonBigint.stringify('aaaaaa'));
     });
   });
-
 
   describe('{"foo":"bar"}', () => {
 

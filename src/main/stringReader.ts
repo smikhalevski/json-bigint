@@ -1,4 +1,4 @@
-import {NO_MATCH, ReaderFunction} from 'tokenizer-dsl';
+import {ReaderFunction} from 'tokenizer-dsl';
 import {die} from './utils';
 
 /**
@@ -7,7 +7,7 @@ import {die} from './utils';
 export const stringReader: ReaderFunction<unknown> = (input, offset) => {
 
   if (input.charCodeAt(offset) !== 34 /*"*/) {
-    return NO_MATCH;
+    return -1;
   }
 
   let endIndex = input.indexOf('"', offset + 1);
