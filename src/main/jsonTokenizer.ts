@@ -72,7 +72,7 @@ export const enum TokenType {
   TRUE,
   FALSE,
   NULL,
-  COLON,
+  // COLON,
   COMMA,
 }
 
@@ -154,9 +154,10 @@ const nullRule: Rule<TokenType, LexerStage, ParserContext> = {
 
 const colonRule: Rule<TokenType, LexerStage, ParserContext> = {
   on: [LexerStage.STRING_VALUE_END],
-  type: TokenType.COLON,
+  // type: TokenType.COLON,
   reader: colonReader,
   to: LexerStage.VALUE_START,
+  silent: true,
 };
 
 const commaRule: Rule<TokenType, LexerStage, ParserContext> = {
