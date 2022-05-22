@@ -94,9 +94,6 @@ const jsonTokenHandler: TokenHandler<TokenType, ParserContext> = (type, chunk, o
       putValue(value, offset, context);
       break;
 
-      // case TokenType.COLON:
-      //   break;
-
     case TokenType.COMMA:
       if (context.cursor === 0) {
         die('Unexpected token', offset);
